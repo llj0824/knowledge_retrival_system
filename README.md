@@ -1,9 +1,5 @@
 # Engineering Documentation: VitaDAO AI Agent
 
-This document outlines the engineering architecture for VitaDAO's AI Agent (AI Terminal). We will integrate with ElizaOS, an agent framework that specializes in community engagement. We will accomplish this by developing a plugin-VitaDAO within ElizaOS. This enables all agents on ElizaOS to reference VitaDAO for information related to longevity research, DeSci, and VitaDAO-specific content. 
-
-To integrate with emerging AI platforms (OpenAI's Operator/Swarm, Claude's Computer Use, LangChain, Virtuals) and ElizaOS, we will build an VitaDAO AI Terminal that serves as an information retrieval system. It will be accessible via same API interface as calling LLM. Interally our VitaDAO Terminal will leverage both a vector database containing VitaDAO documents and real-time web search capabilities to provide comprehensive information about VitaDAO's tokenomics, research IP, and ongoing project updates.
-
 This is the engineering architecture for VitaDAO's AI Terminal, a knowledge retrieval system designed to provide comprehensive information about VitaDAO's tokenomics, research IP, and ongoing project updates. 
 
 The VitaDAO AI Terminal will leverage both a vector database containing VitaDAO documents and real-time web search capabilities. Externally the AI Terminal will serve as a foundational information agent to interact as data provider for other emerging AI platforms and agent frameworks. This system will be accessible via the same API interface as calling an LLM, making it compatible with various AI platforms (OpenAI's Operator/Swarm, Claude's Computer Use, LangChain, Virtuals) and agent frameworks like ElizaOS.
