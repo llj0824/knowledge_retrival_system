@@ -1,11 +1,186 @@
-## **Project Proposal: Enterprise Knowledge Retrieval System Chatbot**
+# Engineering Documentation: VitaDAO AI Agent
 
-### **Executive Summary**
-This proposal outlines the design and implementation of a knowledge retrieval system chatbot to support VitaDAO's community and token holders. The chatbot will integrate with large language models (LLMs), vector databases containing DAO documents and research data, and an internet search API to provide accurate, real-time responses to user inquiries.
+This document outlines the engineering architecture for VitaDAO's AI Agent. We will integrate with ElizaOS, an agent framework that specializes in community engagement. We will accomplish this by developing a plugin-VitaDAO within ElizaOS. This enables all agents on ElizaOS to reference VitaDAO for information related to longevity research, DeSci, and VitaDAO-specific content. 
 
-The key functionalities of the chatbot include answering token economics and research-related questions, providing updates on research projects and IP assets, analyzing potential impact of research outcomes, and responding to governance and community participation queries. 
+To integrate with emerging AI platforms (OpenAI's Operator/Swarm, Claude's Computer Use, LangChain, Virtuals) and ElizaOS, we will build an AI chatbot that serves as an information retrieval system. It will be accessible via same API interface as calling LLM. Interally our chatbot will leverage both a vector database containing VitaDAO documents and real-time web search capabilities to provide comprehensive information about VitaDAO's tokenomics, research IP, and ongoing project updates.
 
 ---
+
+## 1. ElizaOS Integration
+
+We will create a Plugin & CharacterFile for VitaDAO in the ElizaOS Repository. This will allow all ElizaOS developers and Agents to access VitaDAO information with one line.
+
+### I. Plugin Architecture
+
+The plugin consists of three core components that work together to provide reliable VitaDAO information across the ElizaOS ecosystem:
+
+1. **Provider**: Gathers information from VitaDAO's Knowledge Retrieval System (KRS)
+2. **Evaluator**: Categorizes and validates information quality
+3. **Actions**: Defines specific operations agents can perform with VitaDAO data
+
+```typescript
+export const vitadaoPlugin: Plugin = {
+    name: "vitadao",
+    description: "VitaDAO Knowledge Retrieval System integration",
+    version: "1.0.0",
+    
+    providers: [vitadaoProvider],
+    evaluators: [vitadaoEvaluator],
+    actions: vitadaoActions,
+
+    // Configuration for the plugin
+    config: {
+        required: ["vitaDaoApiKey", "vitaDaoEndpoint"],
+        defaults: {
+            krsEndpoint: "https://api.vitadao.com/agent"
+        }
+    }
+};
+```
+
+### II. Provider Implementation
+
+The Provider serves as linking for ElizaOS and VitaDAO's data so that all Agents in ElizaOS will have ability to answer following questions.
+
+#### Data 
+1. **VitaDAO Research Information**
+   - Project updates and milestones
+   - Published papers and findings
+   - Research collaborations
+
+2. **VitaDAO Governance Data**
+   - Active proposals
+   - Voting results
+   - Community initiatives
+
+   
+3. **VitaDAO Token Economics**
+   - Real-time market data
+   - Historical performance
+   - Token utility metrics
+
+```typescript
+export const vitadaoProvider: Provider = {
+    name: "VITADAO_PROVIDER",
+    description: "Provides VitaDAO information through VitaDAO Agent API",
+
+    async get(runtime: AgentRuntime, message: Memory, state?: State) {
+        if (!runtime.config.vitaDaoApiKey) {
+            throw new Error("VitaDAO API key is not set.");
+        }
+
+        try {
+            const payload = {
+                messages: [
+                    {
+                        role: "user",
+                        content: message.content
+                    }
+                ]
+            };
+
+            const response = await fetch(runtime.config.vitaDaoEndpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${runtime.config.vitaDaoApiKey}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            return {
+                answer: data.answer,
+                confidence: data.confidence,
+                sources: data.sources,
+                timestamp: Date.now()
+            };
+        } 
+    }
+};
+```
+   
+### III. Evaluator Design
+
+The Evaluator ensures information quality and relevance:
+
+#### Evaluation Metrics
+1. **Query Classification**
+   - Research relevance
+   - Token economics relevance
+   - Governance relevance
+   
+2. **Data Quality**
+   - Source verification
+   - Timestamp validation
+   - Confidence scoring
+
+3. **Context Analysis**
+   - User intent matching
+   - Response appropriateness
+   - Information completeness
+
+```typescript
+export const vitadaoEvaluator: Evaluator = {
+    name: "VITADAO_EVALUATOR",
+    description: "Evaluates VitaDAO responses",
+
+    async handler(runtime: AgentRuntime, message: Memory) {
+        const response = message.content;
+        return {
+            quality: {
+                hasAnswer: Boolean(response.answer),
+                confidence: response.confidence || 0
+            },
+            trustScore: response.confidence > 0.7 ? 1 : 0
+        };
+    }
+};
+```
+
+### IV. Actions Framework
+
+Actions define the specific ways agents can interact with VitaDAO data:
+
+#### Core Actions
+1. **Information Retrieval**
+```typescript
+{
+  name: "FETCH_VITADAO_INFO",
+  description: "Retrieves verified VitaDAO information",
+  categories: ["research", "tokenomics", "governance"],
+  trustLevel: "high"
+}
+```
+
+2. **Update Monitoring**
+```typescript
+{
+  name: "MONITOR_VITADAO_UPDATES",
+  description: "Tracks changes in specified VitaDAO metrics",
+  categories: ["project_updates", "token_metrics", "governance"],
+  trustLevel: "high"
+}
+```
+
+3. **Analysis Generation**
+```typescript
+{
+  name: "ANALYZE_VITADAO_DATA",
+  description: "Generates insights from VitaDAO data",
+  categories: ["impact_analysis", "trend_analysis", "comparative_analysis"],
+  trustLevel: "medium"
+}
+```
+
+---
+
+
+## 2. Knowledge Retrieval System
+
+This outlines the design and implementation of a knowledge retrieval system chatbot to support VitaDAO's community and token holders. The chatbot will integrate with large language models (LLMs), vector databases containing DAO documents and research data, and an internet search API to provide accurate, real-time responses to user inquiries.
+
+The key functionalities of the chatbot include answering token economics and research-related questions, providing updates on research projects and IP assets, analyzing potential impact of research outcomes, and responding to governance and community participation queries. 
 
 ### **1. Objectives**
 
@@ -36,31 +211,30 @@ The knowledge retrieval system will cover the following areas:
 
 ### **2.1 Example Questions and Use Cases**
 
-The chatbot will be capable of handling various types of queries, including:
+The chatbot will be capable of handling various types of queries from different user groups:
 
-#### Token and Economic Questions
-- "What is the current VITA token price?"
-- "Explain VitaDAO's tokenomics model"
+#### Token Holder & Community Questions
+- "What is the current VITA token price and market cap?"
 - "Show me recent blockchain activity for VITA"
-- "What's the current market cap and circulation?"
-
-#### Research and IP Questions
-- "Can you explain the latest research proposal on longevity biomarkers?"
-- "What's the current progress of Project X in our portfolio?"
-- "Summarize the key findings from our latest completed research"
-- "What IP assets does VitaDAO currently hold?"
-
-#### Impact Analysis
-- "How would successful completion of Project Y affect token value?"
-- "What are the potential implications of this research for VitaDAO's portfolio?"
-- "Explain the relationship between research outcomes and token utility"
-
-#### General DAO Information
-- "How does VitaDAO's governance process work?"
+- "How could Project X latest news affect token value?"
+- "How can I participate in governance voting?"
 - "What are the current voting proposals?"
-- "How can I participate in research discussions?"
+- "What rights do I have as a token holder?"
 
----
+#### Researcher Questions
+- "What research projects is VitaDAO currently funding?"
+- "Which labs/researchers have received funding?"
+- "What's the typical funding amount for longevity research projects?"
+- "How can I submit a research proposal?"
+- "Show me all published papers from VitaDAO-funded research"
+
+#### Longevity Community Questions
+- "What are the most promising longevity research areas VitaDAO is funding?"
+- "How can I learn more about the science behind VitaDAO's funded projects?"
+- "What's VitaDAO's perspective (DeSci) on different longevity approaches?"
+- "Can you explain the significance of Project X for aging research?"
+- "How can I get involved?"
+
 
 ### **3. System Architecture**
 
@@ -88,117 +262,89 @@ The system will be composed of the following components:
   - If the query relates to member status, it will query the internet search API.
   - If the query cannot be answered using the above, the chatbot will respond based on the base LLM.
 
----
-
 ### **4. System Flow & Decision Logic**
 
 The backend will follow the decision logic outlined below for query handling:
-
-1. **User submits a query.**
-   - If the query relates to company policies or internal documentation:
-     - Search the vector database for the most relevant document(s).
-     - If results are found, return the information with possible context.
-     - If no results are found, proceed to generic LLM response.
-   
-2. **If the query is about member status:**
-   - Use internet search API to gather the most recent status updates.
-   - Provide the response with verified external sources.
-
-3. **For generic or ambiguous queries:**
-   - Use the base LLM to answer the query, ensuring it's as informative as possible without retrieving from external data.
-
-4. **Logging and Feedback:**
-   - All queries will be logged, along with the corresponding response.
-   - Feedback mechanisms will be implemented for continuous improvement.
 
 **Flow Diagram:**
 ```plaintext
 [User Query] 
      |
-[Is Query about Company Policy?]
-     |----[Yes]----> [Query Vector DB] ----> [Retrieve Relevant Document]
+[Is Query about Token/Research Data?]
+     |----[Yes]----> [Query Vector DB] ----> [Retrieve DAO Documents]
      |                             |
      |                             v
      |                          [Found?]----> [Return Answer]
      |                             |
      |                             v
-     |                        [No] --> [LLM Base Answer]
+     |                          [No] --> [LLM Base Answer]
      |
-[Is Query about Client Status?]
-     |----[Yes]----> [Query Internet Search API] --> [Retrieve Latest Client Data]
-     |                                                       |
-     |                                                       v
-     |                                                   [Return Status]
+[Is Query about Latest Updates?]
+     |----[Yes]----> [Query Internet Search API] --> [Retrieve Latest Data]
+     |                      (Research/Market/Token)          |
+     |                                                      v
+     |                                                  [Return Updates]
+     |
+[Is Query about Impact Analysis?]
+     |----[Yes]----> [Combine Vector DB + LLM] --> [Generate Analysis]
+     |
      |
 [Generic Query] --> [LLM Base Answer]
 ```
 
----
+This flow handles:
+1. Token and Research queries using stored DAO documents
+2. Real-time updates using internet search
+3. Impact analysis using combined data sources
+4. General queries using base LLM knowledge
 
-### **5. Technical Requirements**
-
-- **Frontend**: React.js, with additional libraries like Axios for API calls and socket handling for real-time chat interactions.
-- **Backend**: FastAPI for efficient, asynchronous request handling and endpoints to serve responses.
-- **Vector Database**: Pinecone, Faiss, or Weaviate for document storage and fast retrieval based on embeddings.
-- **Internet Search API**: Integration with a reliable API (e.g., SerpAPI, Google Custom Search).
-- **LLM**: OpenAI's GPT-4, or a fine-tuned alternative model, depending on licensing and performance.
 
 ---
 
-### **6. Security Considerations**
+### **5. Tech Stack **
 
-- **Authentication**: Secure access to the chatbot for internal users to prevent unauthorized access to sensitive company information.
-- **Data Privacy**: Ensure that user conversations are anonymized and stored in compliance with data protection regulations (e.g., GDPR, CCPA).
-- **Rate Limiting and Monitoring**: Prevent abuse of the system by implementing rate limiting, logging, and alerting for suspicious activities.
+- **Frontend**: React
+- **Backend**: FastAPI 
+- **Vector Database**: Pinecone, Faiss
+- **Internet Search API**: Integration with a reliable API (e.g., Perplexity, Tavily, Metaphor Api).
+- **LLM**: OpenAI's GPT-4, Claude, Deepseek
 
----
+### Edge Cases
 
-### **7. Timeline**
+1. **Relevancy and Timeliness**
+   - **Data Staleness**
+     - When a project has multiple updates (May, July, Dec), we huertistic of priotizinig the latest  updates
+     - Secondary: also also keep track of how the project evolved over time
+   
+   - **Relevant Information not missed**
+     - If someone asks about project progression we need to pull the right chunks of info that actually answer the question - current progress vs how it differs from previous update.
 
-| Phase                  | Duration    | Description                                                   |
-|------------------------|-------------|---------------------------------------------------------------|
-| **Phase 1: Research & Design** | 2 weeks     | Requirement gathering, system architecture design, tool selection. |
-| **Phase 2: Frontend Development** | 4 weeks     | Design and implement the React webapp and chatbot UI.          |
-| **Phase 3: Backend Development**  | 6 weeks     | Implement FastAPI, database integrations, LLM, and search API. |
-| **Phase 4: Integration & Testing**  | 3 weeks     | Integration of components, bug fixing, and load testing.      |
-| **Phase 5: Deployment**  | 2 weeks     | Deploy the application and monitor for feedback.               |
-| **Phase 6: Iterative Improvement** | Ongoing     | Post-launch optimizations based on user feedback and analytics. |
-
----
-
-### **8. Budget**
-
-| Item                        | Estimated Cost   | Justification                         |
-|-----------------------------|------------------|---------------------------------------|
-| **Frontend Development**    | $XX,XXX          | React.js development, UI/UX design   |
-| **Backend Development**     | $XX,XXX          | FastAPI setup, API integrations      |
-| **LLM Integration**         | $XX,XXX          | Model usage and fine-tuning          |
-| **Vector Database Setup**   | $XX,XXX          | Database licensing or cloud costs    |
-| **Internet Search API**     | $X,XXX           | API call charges                     |
-| **Hosting and Deployment**  | $X,XXX           | Cloud hosting for infrastructure     |
-| **Security Implementation** | $X,XXX           | Security tools, authentication setup |
-
-**Total Estimated Budget**: $XXX,XXX
+2. **Web Search Capabilities**
+   - **Priotization of key sites**
+     - hueristic for priotizing our partner protocols (Molecule, Bio, Pump Science) and research collaborators (SENS Research Foundation, Fang Lab, Korolchuk Lab, Gorbunova Lab)
+   - **Handling Conflicts**
+     - Info lives everywhere - Discord, Forums, Research docs
+     - Need to know which source to trust when they say different things
 
 ---
 
-### **9. Risk Analysis and Mitigation**
+### **FAQ**
 
-- **Risk**: LLM may not always provide accurate company-specific answers.
-  - **Mitigation**: Continuously fine-tune the LLM with new data and feedback to ensure relevance.
-  
-- **Risk**: Vector database retrieval latency or inaccuracies.
-  - **Mitigation**: Use advanced retrieval algorithms and periodic database updates.
+#### Q: Why build VitaDAO's own AI system (Knowledge Retrieval System [KRS]) instead of building directly with ElizaOS?
 
-- **Risk**: Over-reliance on internet search data.
-  - **Mitigation**: Cross-check internet data with internal databases to ensure accuracy.
+**A:** This addresses a common concern about potential duplicate work. Here's why a separate KRS is essential:
+
+1. **ElizaOS is for community engagement. It relies on downstream information.**
+   - ElizaOS excels at community engagement and cross-platform interactions (Twitter, Discord, Telegram, Slack, etc.)
+   - ElizaOS relies on data providers to get accurate information
+   - Knowledge retrieval and accuracy is not ElizaOS's appeal.
+   - We need to ensure accurate, verified responses before they flow into ElizaOS for community engagement
+
+2. **Allows VitaDAO to be data provider for Agent economy on longevity and DeSci**
+     - Major AI companies (OpenAI - Operator/Swarm, Meta - Messenger, Anthropic - Computer Use, NVIDIA) will all have their own agents.
+     - All agents will need data sources and data providers. It's trending towards unstructure data (Agents talking to Agents). 
+     - We want to own and control our data access while making it consumable by others. Granularity of data to token owners & community members vs external public.
+     - Use ElizaOS instead of becoming married to their ecosystem. Can integrate with other open-source agent frameworks (LangChain, LlamaIndex, Haystack, G.A.M.E)
+   - Our data flow will be: VitaDAO Data → AI System (Knowledge retreival system) → Multiple Platforms (ElizaOS, OpenAI Operator, Virtuals, etc.)
 
 ---
-
-### **10. Conclusion**
-
-This knowledge retrieval system chatbot will serve as a valuable tool for enhancing both customer and employee experiences by providing accurate, real-time information in a conversational interface. With its multi-tiered approach to information retrieval, it will streamline company policy access, client status tracking, and general knowledge queries. We look forward to discussing this proposal further and moving forward with the project approval.
-
---- 
-
-Please let me know if you need further details or adjustments.
