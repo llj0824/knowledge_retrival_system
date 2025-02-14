@@ -689,6 +689,59 @@ class AgentEvaluationSystem {
 #### Best Practices:
 Each evaluator should focus on a specific aspect of evaluation while maintaining the ability to work together in the agent's evaluation pipeline. The results from these evaluators help the agent make informed decisions, maintain context, and provide appropriate responses.
 
+
+### 7. **Plugins**
+Plugins extend the functionality of Eliza agents by providing specialized tools. For example, an image generation plugin could allow the agent to create visuals based on text prompts, or a Solana plugin could enable the agent to interact with the Solana blockchain.
+
+**Example:**
+```typescript
+export const imageGenerationPlugin: Plugin = {
+  name: "imageGeneration",
+  description: "Generate images",
+  actions: [imageGeneration],
+  evaluators: [],
+  providers: []
+};
+```
+This plugin adds image generation capabilities to the agent.
+
+### How Everything Comes Together:
+Eliza agents use these components together to create a sophisticated autonomous system. Here's how they work in a concrete scenario:
+
+1. **Initialization & Configuration**
+   - Agent is initialized with a character file defining personality, knowledge base, and interaction patterns
+   - AgentRuntime is configured with necessary providers, evaluators, and actions
+   - Database adapters are set up for persistent storage and memory management
+
+2. **Runtime Operations**
+   - The AgentRuntime orchestrates all components and manages the agent's lifecycle
+   - Memory systems track conversations, descriptions, and contextual lore
+   - State management ensures consistency across interactions
+   - Database adapters handle data persistence and retrieval
+
+3. **Action Execution**
+   - Agent identifies and validates appropriate actions based on context
+   - Actions are executed through specialized handlers
+   - Trust scores and parameters are validated before execution
+   - Results are stored and tracked for future reference
+
+4. **Provider Integration**
+   - Real-time data is fetched from relevant providers (market data, weather, user activity)
+   - Providers implement caching and rate limiting for optimal performance
+   - Multiple providers can work together to build comprehensive context
+   - Fallback mechanisms ensure reliability
+
+5. **Evaluation & Analysis**
+   - Evaluators assess interactions for fact validation, goal progress, and trust scores
+   - Sentiment and emotion analysis guide response patterns
+   - Context is continuously built and refined through memory evaluation
+   - Results influence future decision-making
+
+6. **Plugin**
+   - Specialized plugins extend core functionality
+   - Custom actions, evaluators, and providers can be added through plugins
+   - Plugins maintain modularity while adding capabilities
+
 ### 6. **Character File**
 Character files are the DNA of your AI agents, defining their entire personality, knowledge base, and interaction patterns. These JSON-structured configurations control how agents think, respond, and behave across different platforms.
 
@@ -798,55 +851,3 @@ Character files are the DNA of your AI agents, defining their entire personality
    - Organize information in digestible chunks
    - Prioritize relevant domain expertise
    - Regular updates to maintain accuracy
-
-### 7. **Plugins**
-Plugins extend the functionality of Eliza agents by providing specialized tools. For example, an image generation plugin could allow the agent to create visuals based on text prompts, or a Solana plugin could enable the agent to interact with the Solana blockchain.
-
-**Example:**
-```typescript
-export const imageGenerationPlugin: Plugin = {
-  name: "imageGeneration",
-  description: "Generate images",
-  actions: [imageGeneration],
-  evaluators: [],
-  providers: []
-};
-```
-This plugin adds image generation capabilities to the agent.
-
-### How Everything Comes Together:
-Eliza agents use these components together to create a sophisticated autonomous system. Here's how they work in a concrete scenario:
-
-1. **Initialization & Configuration**
-   - Agent is initialized with a character file defining personality, knowledge base, and interaction patterns
-   - AgentRuntime is configured with necessary providers, evaluators, and actions
-   - Database adapters are set up for persistent storage and memory management
-
-2. **Runtime Operations**
-   - The AgentRuntime orchestrates all components and manages the agent's lifecycle
-   - Memory systems track conversations, descriptions, and contextual lore
-   - State management ensures consistency across interactions
-   - Database adapters handle data persistence and retrieval
-
-3. **Action Execution**
-   - Agent identifies and validates appropriate actions based on context
-   - Actions are executed through specialized handlers
-   - Trust scores and parameters are validated before execution
-   - Results are stored and tracked for future reference
-
-4. **Provider Integration**
-   - Real-time data is fetched from relevant providers (market data, weather, user activity)
-   - Providers implement caching and rate limiting for optimal performance
-   - Multiple providers can work together to build comprehensive context
-   - Fallback mechanisms ensure reliability
-
-5. **Evaluation & Analysis**
-   - Evaluators assess interactions for fact validation, goal progress, and trust scores
-   - Sentiment and emotion analysis guide response patterns
-   - Context is continuously built and refined through memory evaluation
-   - Results influence future decision-making
-
-6. **Plugin**
-   - Specialized plugins extend core functionality
-   - Custom actions, evaluators, and providers can be added through plugins
-   - Plugins maintain modularity while adding capabilities

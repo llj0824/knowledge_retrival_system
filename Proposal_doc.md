@@ -1,4 +1,4 @@
-## **Engineering Documentation: VitaDAO AI Agent **
+# Engineering Documentation: VitaDAO AI Agent
 
 This document outlines the engineering architecture for VitaDAOs AI Agent. We will start with an AI system (aka knowledge retrival system) that will be the source of truth for VitaDao's tokenimics, Research IP, and ongoing project updates. The information will be grounded by the DAO's internal documents and web search to track latest updates to research projects of VitaDao. 
 
@@ -12,13 +12,13 @@ Then we will integrate with ElizaOS, a agent framework that speicalizes in commu
 
 **A:** This addresses a common concern about potential duplicate work. Here's why a separate KRS is essential:
 
-1. **ElizaOS is for community engagement. It relies on downstream information. **
+1. **ElizaOS is for community engagement. It relies on downstream information.**
    - ElizaOS excels at community engagement and cross-platform interactions (Twitter, Discord, Telegram, Slack, etc.)
    - ElizaOS relies on data providers to get accurate information
    - Knowledge retrieval and accuracy is not ElizaOS's appeal.
    - We need to ensure accurate, verified responses before they flow into ElizaOS for community engagement
 
-2. **Be at forefront of data provider for Agent economy on longevity and DeSci**
+2. **Allows VitaDAO to be data provider for Agent economy on longevity and DeSci**
      - Major AI companies (OpenAI - Operator/Swarm, Meta - Messenger, Anthropic - Computer Use, NVIDIA) will all have their own agents.
      - All agents will need data sources and data providers. It's trending towards unstructure data (Agents talking to Agents). 
      - We want to own and control our data access while making it consumable by others. Granularity of data to token owners & community members vs external public.
@@ -46,11 +46,9 @@ Then we will integrate with ElizaOS, a agent framework that speicalizes in commu
      - Info lives everywhere - Discord, Forums, Research docs
      - Need to know which source to trust when they say different things
 
-
-
-
 ---
-1. Knowledge Retreival System
+
+## 1. Knowledge Retrieval System
 
 This proposal outlines the design and implementation of a knowledge retrieval system chatbot to support VitaDAO's community and token holders. The chatbot will integrate with large language models (LLMs), vector databases containing DAO documents and research data, and an internet search API to provide accurate, real-time responses to user inquiries.
 
@@ -85,29 +83,29 @@ The knowledge retrieval system will cover the following areas:
 
 ### **2.1 Example Questions and Use Cases**
 
-The chatbot will be capable of handling various types of queries, including:
+The chatbot will be capable of handling various types of queries from different user groups:
 
-#### Token and Economic Questions
-- "What is the current VITA token price?"
-- "Explain VitaDAO's tokenomics model"
+#### Token Holder & Community Questions
+- "What is the current VITA token price and market cap?"
 - "Show me recent blockchain activity for VITA"
-- "What's the current market cap and circulation?"
-
-#### Research and IP Questions
-- "Can you explain the latest research proposal on longevity biomarkers?"
-- "What's the current progress of Project X in our portfolio?"
-- "Summarize the key findings from our latest completed research"
-- "What IP assets does VitaDAO currently hold?"
-
-#### Impact Analysis
-- "How would successful completion of Project Y affect token value?"
-- "What are the potential implications of this research for VitaDAO's portfolio?"
-- "Explain the relationship between research outcomes and token utility"
-
-#### General DAO Information
-- "How does VitaDAO's governance process work?"
+- "How could Project X latest news affect token value?"
+- "How can I participate in governance voting?"
 - "What are the current voting proposals?"
-- "How can I participate in research discussions?"
+- "What rights do I have as a token holder?"
+
+#### Researcher Questions
+- "What research projects is VitaDAO currently funding?"
+- "Which labs/researchers have received funding?"
+- "What's the typical funding amount for longevity research projects?"
+- "How can I submit a research proposal?"
+- "Show me all published papers from VitaDAO-funded research"
+
+#### Longevity Community Questions
+- "What are the most promising longevity research areas VitaDAO is funding?"
+- "How can I learn more about the science behind VitaDAO's funded projects?"
+- "What's VitaDAO's perspective (DeSci) on different longevity approaches?"
+- "Can you explain the significance of Project X for aging research?"
+- "How can I get involved?"
 
 
 ### **3. System Architecture**
@@ -135,7 +133,6 @@ The system will be composed of the following components:
   - First, the chatbot will attempt to retrieve relevant information from the vector database based on the user's query.
   - If the query relates to member status, it will query the internet search API.
   - If the query cannot be answered using the above, the chatbot will respond based on the base LLM.
-
 
 ### **4. System Flow & Decision Logic**
 
@@ -183,3 +180,171 @@ This flow handles:
 - **Vector Database**: Pinecone, Faiss
 - **Internet Search API**: Integration with a reliable API (e.g., Perplexity, Tavily, Metaphor Api).
 - **LLM**: OpenAI's GPT-4, Claude, Deepseek
+
+
+## 2. ElizaOS Integration
+
+We will create a Plugin & CharacterFile for VitaDAO in the ElizaOS Repository. This will allow all ElizaOS developers and Agents to access VitaDAO information with one line.
+
+### I. Plugin Architecture
+
+The plugin consists of three core components that work together to provide reliable VitaDAO information across the ElizaOS ecosystem:
+
+1. **Provider**: Gathers information from VitaDAO's Knowledge Retrieval System (KRS)
+2. **Evaluator**: Categorizes and validates information quality
+3. **Actions**: Defines specific operations agents can perform with VitaDAO data
+
+```typescript
+export const vitadaoPlugin: Plugin = {
+    name: "vitadao",
+    description: "VitaDAO Knowledge Retrieval System integration",
+    version: "1.0.0",
+    
+    providers: [vitadaoProvider],
+    evaluators: [vitadaoEvaluator],
+    actions: vitadaoActions,
+
+    // Configuration for the plugin
+    config: {
+        required: ["vitaDaoApiKey", "vitaDaoEndpoint"],
+        defaults: {
+            krsEndpoint: "https://api.vitadao.com/agent"
+        }
+    }
+};
+```
+
+### II. Provider Implementation
+
+The Provider serves as linking for ElizaOS and VitaDAO's data so that all Agents in ElizaOS will have ability to answer following questions.
+
+#### Data 
+1. **VitaDAO Research Information**
+   - Project updates and milestones
+   - Published papers and findings
+   - Research collaborations
+
+2. **VitaDAO Governance Data**
+   - Active proposals
+   - Voting results
+   - Community initiatives
+
+   
+3. **VitaDAO Token Economics**
+   - Real-time market data
+   - Historical performance
+   - Token utility metrics
+
+```typescript
+export const vitadaoProvider: Provider = {
+    name: "VITADAO_PROVIDER",
+    description: "Provides VitaDAO information through VitaDAO Agent API",
+
+    async get(runtime: AgentRuntime, message: Memory, state?: State) {
+        if (!runtime.config.vitaDaoApiKey) {
+            throw new Error("VitaDAO API key is not set.");
+        }
+
+        try {
+            const payload = {
+                messages: [
+                    {
+                        role: "user",
+                        content: message.content
+                    }
+                ]
+            };
+
+            const response = await fetch(runtime.config.vitaDaoEndpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${runtime.config.vitaDaoApiKey}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            return {
+                answer: data.answer,
+                confidence: data.confidence,
+                sources: data.sources,
+                timestamp: Date.now()
+            };
+        } 
+    }
+};
+```
+   
+### III. Evaluator Design
+
+The Evaluator ensures information quality and relevance:
+
+#### Evaluation Metrics
+1. **Query Classification**
+   - Research relevance
+   - Token economics relevance
+   - Governance relevance
+   
+2. **Data Quality**
+   - Source verification
+   - Timestamp validation
+   - Confidence scoring
+
+3. **Context Analysis**
+   - User intent matching
+   - Response appropriateness
+   - Information completeness
+
+```typescript
+export const vitadaoEvaluator: Evaluator = {
+    name: "VITADAO_EVALUATOR",
+    description: "Evaluates VitaDAO responses",
+
+    async handler(runtime: AgentRuntime, message: Memory) {
+        const response = message.content;
+        return {
+            quality: {
+                hasAnswer: Boolean(response.answer),
+                confidence: response.confidence || 0
+            },
+            trustScore: response.confidence > 0.7 ? 1 : 0
+        };
+    }
+};
+```
+
+### IV. Actions Framework
+
+Actions define the specific ways agents can interact with VitaDAO data:
+
+#### Core Actions
+1. **Information Retrieval**
+```typescript
+{
+  name: "FETCH_VITADAO_INFO",
+  description: "Retrieves verified VitaDAO information",
+  categories: ["research", "tokenomics", "governance"],
+  trustLevel: "high"
+}
+```
+
+2. **Update Monitoring**
+```typescript
+{
+  name: "MONITOR_VITADAO_UPDATES",
+  description: "Tracks changes in specified VitaDAO metrics",
+  categories: ["project_updates", "token_metrics", "governance"],
+  trustLevel: "high"
+}
+```
+
+3. **Analysis Generation**
+```typescript
+{
+  name: "ANALYZE_VITADAO_DATA",
+  description: "Generates insights from VitaDAO data",
+  categories: ["impact_analysis", "trend_analysis", "comparative_analysis"],
+  trustLevel: "medium"
+}
+```
