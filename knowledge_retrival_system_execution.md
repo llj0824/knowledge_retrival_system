@@ -31,7 +31,6 @@ The frontend will be a React web application that serves as the user interface f
    - **React**: `react`, `react-dom`
    - **React Router**: `react-router-dom` for handling routes (if needed)
    - **Axios**: `axios` for making HTTP requests to FastAPI backend
-   - **Socket.io (optional)**: For real-time chat experience
 
 3. **Installation**:
    To set up the frontend locally, ensure Node.js is installed, then run:

@@ -303,11 +303,13 @@ This flow handles:
 
 ### **5. Tech Stack **
 
+Detailed Implementation Plan: [See Implementation Details](knowledge_retrival_system_execution.md)
 - **Frontend**: React
 - **Backend**: FastAPI 
 - **Vector Database**: Pinecone, Faiss
 - **Internet Search API**: Integration with a reliable API (e.g., Perplexity, Tavily, Metaphor Api).
 - **LLM**: OpenAI's GPT-4, Claude, Deepseek
+
 
 ### Edge Cases
 
