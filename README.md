@@ -1,6 +1,6 @@
 # Engineering Documentation: VitaDAO AI Agent
 
-This document outlines the engineering architecture for VitaDAO's AI Agent. We will integrate with ElizaOS, an agent framework that specializes in community engagement. We will accomplish this by developing a plugin-VitaDAO within ElizaOS. This enables all agents on ElizaOS to reference VitaDAO for information related to longevity research, DeSci, and VitaDAO-specific content. 
+This document outlines the engineering architecture for VitaDAO's AI Agent (AI Terminal). We will integrate with ElizaOS, an agent framework that specializes in community engagement. We will accomplish this by developing a plugin-VitaDAO within ElizaOS. This enables all agents on ElizaOS to reference VitaDAO for information related to longevity research, DeSci, and VitaDAO-specific content. 
 
 To integrate with emerging AI platforms (OpenAI's Operator/Swarm, Claude's Computer Use, LangChain, Virtuals) and ElizaOS, we will build an VitaDAO AI Terminal that serves as an information retrieval system. It will be accessible via same API interface as calling LLM. Interally our VitaDAO Terminal will leverage both a vector database containing VitaDAO documents and real-time web search capabilities to provide comprehensive information about VitaDAO's tokenomics, research IP, and ongoing project updates.
 
@@ -176,9 +176,9 @@ Actions define the specific ways agents can interact with VitaDAO data:
 ---
 
 
-## 2. Knowledge Retrieval System
+## 2. VitaDAO AI Terminal - Knowledge Retrieval System
 
-This outlines the design and implementation of a knowledge retrieval system VitaDAO Terminal to support VitaDAO's community and token holders. The VitaDAO Terminal will integrate with large language models (LLMs), vector databases containing DAO documents and research data, and an internet search API to provide accurate, real-time responses to user inquiries.
+This outlines the design and implementation of a knowledge retrieval system, VitaDAO Terminal, to support VitaDAO's community and token holders. The VitaDAO Terminal will integrate with large language models (LLMs), vector databases containing DAO documents and research data, and an internet search API to provide accurate, real-time responses to user inquiries.
 
 The key functionalities of the VitaDAO Terminal include answering token economics and research-related questions, providing updates on research projects and IP assets, analyzing potential impact of research outcomes, and responding to governance and community participation queries. 
 
