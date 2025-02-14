@@ -2,7 +2,7 @@
 
 This document outlines the engineering architecture for VitaDAO's AI Agent. We will integrate with ElizaOS, an agent framework that specializes in community engagement. We will accomplish this by developing a plugin-VitaDAO within ElizaOS. This enables all agents on ElizaOS to reference VitaDAO for information related to longevity research, DeSci, and VitaDAO-specific content. 
 
-To integrate with emerging AI platforms (OpenAI's Operator/Swarm, Claude's Computer Use, LangChain, Virtuals) and ElizaOS, we will build an AI chatbot that serves as an information retrieval system. It will be accessible via same API interface as calling LLM. Interally our chatbot will leverage both a vector database containing VitaDAO documents and real-time web search capabilities to provide comprehensive information about VitaDAO's tokenomics, research IP, and ongoing project updates.
+To integrate with emerging AI platforms (OpenAI's Operator/Swarm, Claude's Computer Use, LangChain, Virtuals) and ElizaOS, we will build an VitaDAO AI Terminal that serves as an information retrieval system. It will be accessible via same API interface as calling LLM. Interally our VitaDAO Terminal will leverage both a vector database containing VitaDAO documents and real-time web search capabilities to provide comprehensive information about VitaDAO's tokenomics, research IP, and ongoing project updates.
 
 ---
 
@@ -178,9 +178,9 @@ Actions define the specific ways agents can interact with VitaDAO data:
 
 ## 2. Knowledge Retrieval System
 
-This outlines the design and implementation of a knowledge retrieval system chatbot to support VitaDAO's community and token holders. The chatbot will integrate with large language models (LLMs), vector databases containing DAO documents and research data, and an internet search API to provide accurate, real-time responses to user inquiries.
+This outlines the design and implementation of a knowledge retrieval system VitaDAO Terminal to support VitaDAO's community and token holders. The VitaDAO Terminal will integrate with large language models (LLMs), vector databases containing DAO documents and research data, and an internet search API to provide accurate, real-time responses to user inquiries.
 
-The key functionalities of the chatbot include answering token economics and research-related questions, providing updates on research projects and IP assets, analyzing potential impact of research outcomes, and responding to governance and community participation queries. 
+The key functionalities of the VitaDAO Terminal include answering token economics and research-related questions, providing updates on research projects and IP assets, analyzing potential impact of research outcomes, and responding to governance and community participation queries. 
 
 ### **1. Objectives**
 
@@ -211,7 +211,7 @@ The knowledge retrieval system will cover the following areas:
 
 ### **2.1 Example Questions and Use Cases**
 
-The chatbot will be capable of handling various types of queries from different user groups:
+The VitaDAO Terminal will be capable of handling various types of queries from different user groups:
 
 #### Token Holder & Community Questions
 - "What is the current VITA token price and market cap?"
@@ -241,7 +241,7 @@ The chatbot will be capable of handling various types of queries from different 
 The system will be composed of the following components:
 
 #### 3.1 **Frontend (React Web Application)**
-- **User Interface**: A responsive web interface allowing users to interact with the chatbot.
+- **User Interface**: A responsive web interface allowing users to interact with the VitaDAO Terminal.
 - **Chat Interface**: Users can submit text queries and receive responses in a conversational format.
 - **User Authentication**: Secure login for internal users to access company policy content.
 
@@ -254,13 +254,13 @@ The system will be composed of the following components:
   
 #### 3.3 **Databases**
 - **Vector Database (e.g., Pinecone, Faiss, or Weaviate)**: Stores the embeddings of company documents, policies, and other knowledge sources for fast retrieval.
-- **SQL Database**: Manages structured data like member information, chatbot logs, and user metadata.
+- **SQL Database**: Manages structured data like member information, VitaDAO Terminal logs, and user metadata.
 
 #### 3.4 **Model Integration**
 - **Retrieval-Augmented Generation (RAG)**:
-  - First, the chatbot will attempt to retrieve relevant information from the vector database based on the user's query.
+  - First, the VitaDAO Terminal will attempt to retrieve relevant information from the vector database based on the user's query.
   - If the query relates to member status, it will query the internet search API.
-  - If the query cannot be answered using the above, the chatbot will respond based on the base LLM.
+  - If the query cannot be answered using the above, the VitaDAO Terminal will respond based on the base LLM.
 
 ### **4. System Flow & Decision Logic**
 
