@@ -4,6 +4,49 @@ This document outlines the engineering architecture for VitaDAOs AI Agent. We wi
 
 Then we will integrate with ElizaOS, a agent framework that speicalizes in community engagement by interacting across multiple platforms (twitter, discord, telegram, slack, etc) while maintaining consistent personalities and knowledge. We will do this by introducing a plugin-VitaDAO, so that all agents on ElizaOS will be able to reference VitaDAO for information related to VitaDAO, and more broadly longevity research and DeSci.
 
+---
+
+### **Rationale**
+
+#### Q: Why build VitaDao's own AI system (Knowledge Retrieval System [KRS]) instead of building directly with ElizaOS?
+
+**A:** This addresses a common concern about potential duplicate work. Here's why a separate KRS is essential:
+
+1. **ElizaOS is for community engagement. It relies on downstream information. **
+   - ElizaOS excels at community engagement and cross-platform interactions (Twitter, Discord, Telegram, Slack, etc.)
+   - ElizaOS relies on data providers to get accurate information
+   - Knowledge retrieval and accuracy is not ElizaOS's appeal.
+   - We need to ensure accurate, verified responses before they flow into ElizaOS for community engagement
+
+2. **Be at forefront of data provider for Agent economy on longevity and DeSci**
+     - Major AI companies (OpenAI - Operator/Swarm, Meta - Messenger, Anthropic - Computer Use, NVIDIA) will all have their own agents.
+     - All agents will need data sources and data providers. It's trending towards unstructure data (Agents talking to Agents). 
+     - We want to own and control our data access while making it consumable by others. Granularity of data to token owners & community members vs external public.
+     - Use ElizaOS instead of becoming married to their ecosystem. Can integrate with other open-source agent frameworks (LangChain, LlamaIndex, Haystack, G.A.M.E)
+   - Our data flow will be: VitaDAO Data → AI System (Knowledge retreival system) → Multiple Platforms (ElizaOS, OpenAI Operator, Virtuals, etc.)
+
+
+
+#### Q: What are the key requirements for the KRS System?
+
+**A:** The system needs to handle:
+
+1. **Relevancy and Timeliness**
+   - **Data Staleness**
+     - When a project has multiple updates (May, July, Dec), we huertistic of priotizinig the latest  updates
+     - Secondary: also also keep track of how the project evolved over time
+   
+   - **Relevant Information not missed**
+     - If someone asks about project progression we need to pull the right chunks of info that actually answer the question - current progress vs how it differs from previous update.
+
+2. **Web Search Capabilities**
+   - **Priotization of key sites**
+     - hueristic for priotizing our partner protocols (Molecule, Bio, Pump Science) and research collaborators (SENS Research Foundation, Fang Lab, Korolchuk Lab, Gorbunova Lab)
+   - **Handling Conflicts**
+     - Info lives everywhere - Discord, Forums, Research docs
+     - Need to know which source to trust when they say different things
+
+
 
 
 ---
