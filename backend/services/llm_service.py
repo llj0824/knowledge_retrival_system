@@ -1,6 +1,13 @@
 import os
 import aiohttp
 from dotenv import load_dotenv
+import logging
+from fastapi import Depends
+
+# Add this at module level
+_llm_service_instance = None
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class LLMService:
     # Model constants
@@ -15,6 +22,9 @@ class LLMService:
         
         # System roles/prompts can be defined here as class attributes
         self.system_role = "You are a helpful assistant."
+        
+        # One-time initialization logic here
+        logger.info("Initializing LLMService")
     
     async def call_openai(self, prompt: str, system_role: str = None, 
                          model: str = GPT_4o, max_tokens: int = 10000, 
@@ -62,3 +72,22 @@ class LLMService:
                     
                 data = await response.json()
                 return data["choices"][0]["message"]["content"].strip()
+
+# FastAPI dependency
+async def get_llm_service() -> LLMService:
+    """Dependency that returns a single LLMService instance"""
+    return LLMService()
+
+async def get_llm_response(
+    query: str,
+    llm_service: LLMService = Depends(get_llm_service)
+) -> str:
+    """Get response using injected service instance"""
+    logger.info(f"LLM Query: {query[:50]}...")  # Log first 50 chars to avoid sensitive data
+    try:
+        response = await llm_service.call_openai(query)
+        logger.debug(f"LLM Raw Response: {response}")
+        return response
+    except Exception as e:
+        logger.error(f"LLM Error: {str(e)}", exc_info=True)
+        return f"Error processing request: {str(e)}"

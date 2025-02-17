@@ -22,7 +22,7 @@ tell application "iTerm"
         # Second tab - Frontend
         create tab with default profile
         tell current session of second tab
-            write text "cd '${DIR}'"
+            write text "cd '${DIR}/frontend'"
             write text "npm start"
         end tell
     end tell

@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from services.llm_service import get_llm_response
@@ -25,15 +25,18 @@ async def startup_event():
     initialize_db()
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(
+    request: ChatRequest,
+    llm_response: callable = Depends(get_llm_response)
+):
     query = request.query
     
-    # Decision logic based on query type
+    # Decision logic
     if "policy" in query.lower():
         response = retrieve_from_vector_db(query)
     elif "client status" in query.lower():
         response = get_client_status_from_web(query)
     else:
-        response = get_llm_response(query)
+        response = await llm_response(query)
     
     return {"answer": response}
