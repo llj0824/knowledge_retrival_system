@@ -6,9 +6,6 @@
 **/dist/
 **/build/
 
-# Babel
-.babelrc
-
 # Package files
 package-lock.json
 
