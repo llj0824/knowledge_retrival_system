@@ -1,8 +1,10 @@
 # Dependencies
-node_modules/
-backend/venv/
-/.env
+**/node_modules/
+**/venv/
 
+# Build outputs
+**/dist/
+**/build/
 
 # Babel
 .babelrc
@@ -10,45 +12,22 @@ backend/venv/
 # Package files
 package-lock.json
 
-# Production build
-/build/
-/dist/
-
-# Python
-__pycache__/
+# caches
+**/__pycache__/
 *.py[cod]
-*$py.class
 *.so
-.Python
-.pytest_cache/
-.coverage
-htmlcov/
 
-# Development
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Environment files
+**/.env
+**/.env.local
+**/.env.*.local
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-*.log
-
-# IDE/Editor specific
-.idea/
+# IDE files
 .vscode/
+.idea/
 *.swp
 *.swo
+
+# OS files
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Chroma database files (if using local persistence)
-/chroma_db/
-.chroma/
-
+Thumbs.db
