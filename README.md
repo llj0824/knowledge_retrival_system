@@ -1,385 +1,354 @@
-# Knowledge Retrieval System
+# Engineering Documentation: VitaDAO AI Agent
 
-This document outlines the engineering approach for building the knowledge retrieval system chatbot, focusing on setting up the **Frontend** (React web app), **Backend** (FastAPI server with LLM and conversation routing), and **Infrastructure** for local development.
+This is the engineering architecture for VitaDAO's AI Terminal, a knowledge retrieval system designed to provide comprehensive information about VitaDAO's tokenomics, research IP, and ongoing project updates. 
+
+The VitaDAO AI Terminal will leverage both a vector database containing VitaDAO documents and real-time web search capabilities. Externally the AI Terminal will serve as a foundational information agent to interact as data provider for other emerging AI platforms and agent frameworks. This system will be accessible via the same API interface as calling an LLM, making it compatible with various AI platforms (OpenAI's Operator/Swarm, Claude's Computer Use, LangChain, Virtuals) and agent frameworks like ElizaOS.
+
+One potential integration path is with popular ElizaOS, an agent framework that specializes in community engagement. By developing a VitaDAO plugin within ElizaOS, we can enable all agents on their platform to reference VitaDAO for information related to longevity research, DeSci, and VitaDAO-specific content.
+
+
+## 1. VitaDAO AI Terminal - Knowledge Retrieval System
+
+This outlines the design and implementation of a knowledge retrieval system, VitaDAO Terminal, to support VitaDAO's community and token holders. The VitaDAO Terminal will integrate with large language models (LLMs), vector databases containing DAO documents and research data, and an internet search API to provide accurate, real-time responses to user inquiries.
+
+The key functionalities of the VitaDAO Terminal include answering token economics and research-related questions, providing updates on research projects and IP assets, analyzing potential impact of research outcomes, and responding to governance and community participation queries. 
+
+### **1. Objectives**
+
+- **Enhance Token Holder Experience**: Provide fast, accurate, and accessible information about token economics, research impact, and governance to VITA token holders.
+- **Support VitaDAO Member Engagement**: Enable broader community members to easily access information about research projects, governance, and participation opportunities.
+- **Improve Research Transparency**: Make VitaDAO's research portfolio, IP assets, and project progress readily available in a conversational format.
+- **Enable Data-Driven Decisions**: Help token holders understand the relationship between research outcomes and token value.
 
 ---
 
-## Structure
-- `/frontend` - Frontend application
-- `/backend` - Backend services
-- `/docs` - Project documentation
+### **2. Scope**
 
-### **0. Quick Start**
+The knowledge retrieval system will cover the following areas:
+1. **Token and Research Analytics (RAG)**:
+   - Real-time token metrics and blockchain activity
+   - Research portfolio status and IP assets
+   - Impact analysis of research outcomes
+   
+2. **Community Information**:
+   - Governance processes and current proposals
+   - Participation opportunities and community initiatives
+   - Token holder rights and responsibilities
 
-To start both the backend and frontend servers:
-```bash
-chmod +x start.sh  # Only needed first time
-./start.sh
+3. **External Updates**:
+   - Latest research developments and milestones
+   - Market conditions and token performance
+   - Related longevity research news
+
+### **2.1 Example Questions and Use Cases**
+
+The VitaDAO Terminal will be capable of handling various types of queries from different user groups:
+
+#### Token Holder & Community Questions
+- "What is the current VITA token price and market cap?"
+- "Show me recent blockchain activity for VITA"
+- "How could Project X latest news affect token value?"
+- "How can I participate in governance voting?"
+- "What are the current voting proposals?"
+- "What rights do I have as a token holder?"
+
+#### Researcher Questions
+- "What research projects is VitaDAO currently funding?"
+- "Which labs/researchers have received funding?"
+- "What's the typical funding amount for longevity research projects?"
+- "How can I submit a research proposal?"
+- "Show me all published papers from VitaDAO-funded research"
+
+#### Longevity Community Questions
+- "What are the most promising longevity research areas VitaDAO is funding?"
+- "How can I learn more about the science behind VitaDAO's funded projects?"
+- "What's VitaDAO's perspective (DeSci) on different longevity approaches?"
+- "Can you explain the significance of Project X for aging research?"
+- "How can I get involved?"
+
+
+### **3. System Architecture**
+
+The system will be composed of the following components:
+
+#### 3.1 **Frontend (React Web Application)**
+- **User Interface**: A responsive web interface allowing users to interact with the VitaDAO Terminal.
+- **Chat Interface**: Users can submit text queries and receive responses in a conversational format.
+- **User Authentication**: Secure login for internal users to access company policy content.
+
+#### 3.2 **Backend (FastAPI)**
+- **Request Processing**: Handles user queries, deciding the appropriate action based on the type of question.
+- **LLM Integration**: Connects to a large language model for processing questions and generating responses.
+- **Vector DB Integration**: Uses a vector database to store and retrieve company policy documents, leveraging a retrieval-augmented generation (RAG) approach.
+- **Internet Search Integration**: Uses APIs to fetch the latest data on members or external topics from the internet.
+- **Chat Log Management**: Logs all user interactions for auditing, training, and feedback purposes.
+  
+#### 3.3 **Databases**
+- **Vector Database (e.g., Pinecone, Faiss, or Weaviate)**: Stores the embeddings of company documents, policies, and other knowledge sources for fast retrieval.
+- **SQL Database**: Manages structured data like member information, VitaDAO Terminal logs, and user metadata.
+
+#### 3.4 **Model Integration**
+- **Retrieval-Augmented Generation (RAG)**:
+  - First, the VitaDAO Terminal will attempt to retrieve relevant information from the vector database based on the user's query.
+  - If the query relates to member status, it will query the internet search API.
+  - If the query cannot be answered using the above, the VitaDAO Terminal will respond based on the base LLM.
+
+### **4. System Flow & Decision Logic**
+
+The backend will follow the decision logic outlined below for query handling:
+
+**Flow Diagram:**
+```plaintext
+[User Query] 
+     |
+[Is Query about Token/Research Data?]
+     |----[Yes]----> [Query Vector DB] ----> [Retrieve DAO Documents]
+     |                             |
+     |                             v
+     |                          [Found?]----> [Return Answer]
+     |                             |
+     |                             v
+     |                          [No] --> [LLM Base Answer]
+     |
+[Is Query about Latest Updates?]
+     |----[Yes]----> [Query Internet Search API] --> [Retrieve Latest Data]
+     |                      (Research/Market/Token)          |
+     |                                                      v
+     |                                                  [Return Updates]
+     |
+[Is Query about Impact Analysis?]
+     |----[Yes]----> [Combine Vector DB + LLM] --> [Generate Analysis]
+     |
+     |
+[Generic Query] --> [LLM Base Answer]
 ```
 
-This will start the FastAPI backend server on port 8000 and the React frontend on port 3000.
+This flow handles:
+1. Token and Research queries using stored DAO documents
+2. Real-time updates using internet search
+3. Impact analysis using combined data sources
+4. General queries using base LLM knowledge
 
-
-### **1. Frontend - React Web Application**
-
-#### 1.1 **Overview**
-The frontend will be a React web application that serves as the user interface for interacting with the chatbot. It will handle displaying the chat interface, managing user input, displaying chatbot responses, and interacting with the FastAPI backend.
-
-#### 1.2 **Structure of the React App**
-
-1. **Folder Structure**:
-   ```plaintext
-   src/
-   ├── components/
-   │   ├── ChatWindow.js           # Chat UI and message rendering
-   │   ├── MessageInput.js         # Text input component
-   │   ├── Header.js               # Application header (optional)
-   ├── context/
-   │   └── ChatContext.js          # State management for chat interactions
-   ├── services/
-   │   └── api.js                 # API calls to FastAPI backend
-   ├── App.js                     # Main app component
-   ├── index.js                   # Entry point to render React app
-   └── styles/                     # CSS or SCSS files
-   ```
-
-2. **Libraries/Dependencies**:
-   - **React**: `react`, `react-dom`
-   - **React Router**: `react-router-dom` for handling routes (if needed)
-   - **Axios**: `axios` for making HTTP requests to FastAPI backend
-
-3. **Installation**:
-   To set up the frontend locally, ensure Node.js is installed, then run:
-   ```bash
-   npx create-react-app knowledge-chatbot
-   cd knowledge-chatbot
-   npm install axios react-router-dom
-   # Optionally for real-time chat:
-   npm install socket.io-client
-   ```
-
-4. **App Component** (`App.js`):
-   ```jsx
-   import React, { useState, useEffect } from 'react';
-   import MessageInput from './components/MessageInput';
-   import ChatWindow from './components/ChatWindow';
-   import { getChatResponse } from './services/api';
-
-   const App = () => {
-     const [messages, setMessages] = useState([]);
-     
-     // Function to handle user input and fetch bot response
-     const sendMessage = async (message) => {
-       setMessages([...messages, { sender: 'user', text: message }]);
-       const botResponse = await getChatResponse(message);
-       setMessages([...messages, { sender: 'user', text: message }, { sender: 'bot', text: botResponse }]);
-     };
-
-     return (
-       <div className="chat-app">
-         <ChatWindow messages={messages} />
-         <MessageInput sendMessage={sendMessage} />
-       </div>
-     );
-   };
-
-   export default App;
-   ```
-
-5. **Message Input Component** (`MessageInput.js`):
-   ```jsx
-   import React, { useState } from 'react';
-
-   const MessageInput = ({ sendMessage }) => {
-     const [input, setInput] = useState("");
-
-     const handleSend = () => {
-       if (input.trim()) {
-         sendMessage(input);
-         setInput(""); // Clear input field
-       }
-     };
-
-     return (
-       <div className="message-input">
-         <input
-           type="text"
-           value={input}
-           onChange={(e) => setInput(e.target.value)}
-           onKeyDown={(e) => e.key === "Enter" && handleSend()}
-         />
-         <button onClick={handleSend}>Send</button>
-       </div>
-     );
-   };
-
-   export default MessageInput;
-   ```
-
-6. **Chat Window Component** (`ChatWindow.js`):
-   ```jsx
-   const ChatWindow = ({ messages }) => {
-     return (
-       <div className="chat-window">
-         {messages.map((message, index) => (
-           <div key={index} className={`message ${message.sender}`}>
-             <p>{message.text}</p>
-           </div>
-         ))}
-       </div>
-     );
-   };
-
-   export default ChatWindow;
-   ```
-
-7. **API Service** (`api.js`):
-   ```javascript
-   import axios from 'axios';
-
-   const API_URL = 'http://localhost:8000/chat';
-
-   export const getChatResponse = async (message) => {
-     try {
-       const response = await axios.post(API_URL, { query: message });
-       return response.data.answer;
-     } catch (error) {
-       console.error("Error fetching chat response:", error);
-       return "Sorry, something went wrong!";
-     }
-   };
-   ```
-
----
-### **2. Backend - FastAPI Server**
-
-#### 2.1 **Overview**
-The backend is built using **FastAPI**, which handles the incoming requests, routes the queries to the appropriate service (LLM, vector DB, or internet search), and returns the chatbot's response. It uses Chroma as a local vector database for storing and retrieving document embeddings.
-
-#### 2.2 **FastAPI Setup**
-
-1. **Folder Structure**:
-   ```plaintext
-   backend/
-   ├── main.py                    # FastAPI app and routes
-   ├── models.py                  # Data models
-   ├── services/
-   │   ├── llm_service.py         # LLM integration
-   │   ├── vector_db_service.py   # Vector DB integration (Chroma)
-   │   ├── search_service.py      # Internet search integration
-   ├── data/                      # Directory for Chroma persistence
-   └── requirements.txt           # Dependencies
-   ```
-
-2. **Dependencies**:
-   ```bash
-   pip install fastapi uvicorn openai chromadb python-dotenv requests
-   ```
-
-3. **Main Application (FastAPI)** (`main.py`):
-   ```python
-   from fastapi import FastAPI
-   from fastapi.middleware.cors import CORSMiddleware
-   from pydantic import BaseModel
-   from services.llm_service import get_llm_response
-   from services.vector_db_service import retrieve_from_vector_db, initialize_db
-   from services.search_service import get_client_status_from_web
-
-   app = FastAPI()
-
-   # Add CORS middleware
-   app.add_middleware(
-       CORSMiddleware,
-       allow_origins=["http://localhost:3000"],
-       allow_credentials=True,
-       allow_methods=["*"],
-       allow_headers=["*"],
-   )
-
-   class ChatRequest(BaseModel):
-       query: str
-
-   @app.on_event("startup")
-   async def startup_event():
-       """Initialize the vector database with example documents"""
-       initialize_db()
-
-   @app.post("/chat")
-   async def chat(request: ChatRequest):
-       query = request.query
-       
-       # Decision logic based on query type
-       if "policy" in query.lower():
-           response = retrieve_from_vector_db(query)
-       elif "client status" in query.lower():
-           response = get_client_status_from_web(query)
-       else:
-           response = get_llm_response(query)
-       
-       return {"answer": response}
-   ```
-
-4. **LLM Integration** (`llm_service.py`):
-   ```python
-   import openai
-   import os
-   from dotenv import load_dotenv
-
-   load_dotenv()
-   openai.api_key = os.getenv('OPENAI_API_KEY')
-
-   def get_llm_response(query: str) -> str:
-       response = openai.Completion.create(
-           engine="text-davinci-003",
-           prompt=query,
-           max_tokens=150
-       )
-       return response.choices[0].text.strip()
-   ```
-
-5. **Vector DB Integration** (`vector_db_service.py`):
-   ```python
-   import chromadb
-   from chromadb.utils import embedding_functions
-   import os
-   from dotenv import load_dotenv
-
-   load_dotenv()
-
-   # Initialize Chroma client with persistence
-   client = chromadb.Client(chromadb.Settings(
-       persist_directory="./data/chroma_db"
-   ))
-
-   # Create embedding function using OpenAI
-   openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-       api_key=os.getenv("OPENAI_API_KEY"),
-       model_name="text-embedding-ada-002"
-   )
-
-   # Create or get collection
-   collection = client.get_or_create_collection(
-       name="company-policy-documents",
-       embedding_function=openai_ef
-   )
-
-   def add_documents(documents: list[str], ids: list[str], metadatas: list[dict] = None):
-       """Add documents to the vector database"""
-       collection.add(
-           documents=documents,
-           ids=ids,
-           metadatas=metadatas
-       )
-
-   def retrieve_from_vector_db(query: str) -> str:
-       """Query the vector database"""
-       results = collection.query(
-           query_texts=[query],
-           n_results=1
-       )
-       
-       if results and results['documents'] and results['documents'][0]:
-           return results['documents'][0][0]
-       return "No relevant information found."
-
-   def initialize_db():
-       """Initialize the database with example documents"""
-       # Only initialize if collection is empty
-       if collection.count() == 0:
-           example_docs = [
-               "Our company's work from home policy allows employees to work remotely two days per week.",
-               "The annual leave policy provides 20 days of paid vacation per year.",
-               "Our healthcare benefits include dental and vision coverage for all full-time employees."
-           ]
-           
-           example_ids = ["policy1", "policy2", "policy3"]
-           
-           example_metadata = [
-               {"type": "work_policy", "department": "HR"},
-               {"type": "leave_policy", "department": "HR"},
-               {"type": "benefits", "department": "HR"}
-           ]
-           
-           add_documents(example_docs, example_ids, example_metadata)
-   ```
-
-6. **Internet Search Integration** (`search_service.py`):
-   ```python
-   import requests
-   import os
-   from dotenv import load_dotenv
-
-   load_dotenv()
-
-   def get_client_status_from_web(query: str) -> str:
-       search_url = f"https://api.serpapi.com/search?q={query}&api_key={os.getenv('SERPAPI_API_KEY')}"
-       response = requests.get(search_url).json()
-       return response['organic_results'][0]['snippet'] if response['organic_results'] else "Client status not found."
-   ```
----
-
-### **3. Infrastructure - Running Locally**
-
-#### 3.1 **Running React App Locally**
-
-1. **Install Dependencies**:
-   In the frontend directory, run:
-   ```bash
-   npm install
-   ```
-
-2. **Start the React App**:
-   ```bash
-   npm start
-   ```
-
-   This will launch the React application at `http://localhost:3000`.
-
-#### 3.2 **Running FastAPI Server Locally**
-
-1. **Install Dependencies**:
-   In the backend directory, create a `requirements.txt` file and include the necessary packages:
-   ```plaintext
-   fastapi
-   uvicorn
-   openai
-   chromadb
-   python-dotenv
-   requests
-   pydantic
-   ```
-
-   Install the dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Start the FastAPI Server**:
-   Run the FastAPI app using `uvicorn`:
-   ```bash
-   uvicorn main:app --reload
-   ```
-
-   This will start the FastAPI server at `http://localhost:8000`.
-
-#### 3.3 **Communication Between Frontend and Backend**
-
-- The React app will make POST requests to the FastAPI server's `/chat` endpoint. Ensure the backend server is running before interacting with the frontend.
-- Update the React API service to ensure the correct endpoint (`http://localhost:8000/chat`).
 
 ---
 
-### **4. Next Steps**
+### **5. Tech Stack **
 
-1. **Testing**: 
-   Test individual components and overall system for integration.
+Detailed Implementation Plan: [See Implementation Details](knowledge_retrival_system_execution.md)
+- **Frontend**: React
+- **Backend**: FastAPI 
+- **Vector Database**: Pinecone, Faiss
+- **Internet Search API**: Integration with a reliable API (e.g., Perplexity, Tavily, Metaphor Api).
+- **LLM**: OpenAI's GPT-4, Claude, Deepseek
+
+
+### Edge Cases
+
+1. **Relevancy and Timeliness**
+   - **Data Staleness**
+     - When a project has multiple updates (May, July, Dec), we huertistic of priotizinig the latest  updates
+     - Secondary: also also keep track of how the project evolved over time
    
-2. **
+   - **Relevant Information not missed**
+     - If someone asks about project progression we need to pull the right chunks of info that actually answer the question - current progress vs how it differs from previous update.
 
-Deployment**: 
-   Plan for deploying both the React app and FastAPI backend to cloud infrastructure (e.g., AWS, GCP, Heroku).
+2. **Web Search Capabilities**
+   - **Priotization of key sites**
+     - hueristic for priotizing our partner protocols (Molecule, Bio, Pump Science) and research collaborators (SENS Research Foundation, Fang Lab, Korolchuk Lab, Gorbunova Lab)
+   - **Handling Conflicts**
+     - Info lives everywhere - Discord, Forums, Research docs
+     - Need to know which source to trust when they say different things
 
-3. **Monitoring & Analytics**:
-   Implement basic monitoring (e.g., logging, error tracking) for system performance and potential issues.
+---
 
-This document provides the necessary setup to begin working locally with React and FastAPI. Further steps will include expanding the system, fine-tuning the logic, and preparing for production deployment.
+## 1. ElizaOS Integration
+
+We will create a Plugin & CharacterFile for VitaDAO in the ElizaOS Repository. This will allow all ElizaOS developers and Agents to access VitaDAO information with one line.
+
+### I. Plugin Architecture
+
+The plugin consists of three core components that work together to provide reliable VitaDAO information across the ElizaOS ecosystem:
+
+1. **Provider**: Gathers information from VitaDAO's Knowledge Retrieval System (KRS)
+2. **Evaluator**: Categorizes and validates information quality
+3. **Actions**: Defines specific operations agents can perform with VitaDAO data
+
+```typescript
+export const vitadaoPlugin: Plugin = {
+    name: "vitadao",
+    description: "VitaDAO Knowledge Retrieval System integration",
+    version: "1.0.0",
+    
+    providers: [vitadaoProvider],
+    evaluators: [vitadaoEvaluator],
+    actions: vitadaoActions,
+
+    // Configuration for the plugin
+    config: {
+        required: ["vitaDaoApiKey", "vitaDaoEndpoint"],
+        defaults: {
+            krsEndpoint: "https://api.vitadao.com/agent"
+        }
+    }
+};
+```
+
+### II. Provider Implementation
+
+The Provider serves as linking for ElizaOS and VitaDAO's data so that all Agents in ElizaOS will have ability to answer following questions.
+
+#### Data 
+1. **VitaDAO Research Information**
+   - Project updates and milestones
+   - Published papers and findings
+   - Research collaborations
+
+2. **VitaDAO Governance Data**
+   - Active proposals
+   - Voting results
+   - Community initiatives
+
+   
+3. **VitaDAO Token Economics**
+   - Real-time market data
+   - Historical performance
+   - Token utility metrics
+
+```typescript
+export const vitadaoProvider: Provider = {
+    name: "VITADAO_PROVIDER",
+    description: "Provides VitaDAO information through VitaDAO Agent API",
+
+    async get(runtime: AgentRuntime, message: Memory, state?: State) {
+        if (!runtime.config.vitaDaoApiKey) {
+            throw new Error("VitaDAO API key is not set.");
+        }
+
+        try {
+            const payload = {
+                messages: [
+                    {
+                        role: "user",
+                        content: message.content
+                    }
+                ]
+            };
+
+            const response = await fetch(runtime.config.vitaDaoEndpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${runtime.config.vitaDaoApiKey}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            return {
+                answer: data.answer,
+                confidence: data.confidence,
+                sources: data.sources,
+                timestamp: Date.now()
+            };
+        } 
+    }
+};
+```
+   
+### III. Evaluator Design
+
+The Evaluator ensures information quality and relevance:
+
+#### Evaluation Metrics
+1. **Query Classification**
+   - Research relevance
+   - Token economics relevance
+   - Governance relevance
+   
+2. **Data Quality**
+   - Source verification
+   - Timestamp validation
+   - Confidence scoring
+
+3. **Context Analysis**
+   - User intent matching
+   - Response appropriateness
+   - Information completeness
+
+```typescript
+export const vitadaoEvaluator: Evaluator = {
+    name: "VITADAO_EVALUATOR",
+    description: "Evaluates VitaDAO responses",
+
+    async handler(runtime: AgentRuntime, message: Memory) {
+        const response = message.content;
+        return {
+            quality: {
+                hasAnswer: Boolean(response.answer),
+                confidence: response.confidence || 0
+            },
+            trustScore: response.confidence > 0.7 ? 1 : 0
+        };
+    }
+};
+```
+
+### IV. Actions Framework
+
+Actions define the specific ways agents can interact with VitaDAO data:
+
+#### Core Actions
+1. **Information Retrieval**
+```typescript
+{
+  name: "FETCH_VITADAO_INFO",
+  description: "Retrieves verified VitaDAO information",
+  categories: ["research", "tokenomics", "governance"],
+  trustLevel: "high"
+}
+```
+
+2. **Update Monitoring**
+```typescript
+{
+  name: "MONITOR_VITADAO_UPDATES",
+  description: "Tracks changes in specified VitaDAO metrics",
+  categories: ["project_updates", "token_metrics", "governance"],
+  trustLevel: "high"
+}
+```
+
+3. **Analysis Generation**
+```typescript
+{
+  name: "ANALYZE_VITADAO_DATA",
+  description: "Generates insights from VitaDAO data",
+  categories: ["impact_analysis", "trend_analysis", "comparative_analysis"],
+  trustLevel: "medium"
+}
+```
+
+---
+
+
+### **FAQ**
+
+#### Q: Why build VitaDAO's own AI system (Knowledge Retrieval System [KRS]) instead of building directly with ElizaOS?
+
+**A:** This addresses a common concern about potential duplicate work. Here's why a separate KRS is essential:
+
+1. **ElizaOS is for community engagement. It relies on downstream information.**
+   - ElizaOS excels at community engagement and cross-platform interactions (Twitter, Discord, Telegram, Slack, etc.)
+   - ElizaOS relies on data providers to get accurate information
+   - Knowledge retrieval and accuracy is not ElizaOS's appeal.
+   - We need to ensure accurate, verified responses before they flow into ElizaOS for community engagement
+
+2. **Allows VitaDAO to be data provider for Agent economy on longevity and DeSci**
+     - Major AI companies (OpenAI - Operator/Swarm, Meta - Messenger, Anthropic - Computer Use, NVIDIA) will all have their own agents.
+     - All agents will need data sources and data providers. It's trending towards unstructure data (Agents talking to Agents). 
+     - We want to own and control our data access while making it consumable by others. Granularity of data to token owners & community members vs external public.
+     - Use ElizaOS instead of becoming married to their ecosystem. Can integrate with other open-source agent frameworks (LangChain, LlamaIndex, Haystack, G.A.M.E)
+   - Our data flow will be: VitaDAO Data → AI System (Knowledge retreival system) → Multiple Platforms (ElizaOS, OpenAI Operator, Virtuals, etc.)
+
+---
+
