@@ -135,11 +135,10 @@ The frontend will be a React web application that serves as the user interface f
    ```
 
 ---
-
 ### **2. Backend - FastAPI Server**
 
 #### 2.1 **Overview**
-The backend is built using **FastAPI**, which handles the incoming requests, routes the queries to the appropriate service (LLM, vector DB, or internet search), and returns the chatbot's response.
+The backend is built using **FastAPI**, which handles the incoming requests, routes the queries to the appropriate service (LLM, vector DB, or internet search), and returns the chatbot's response. It uses Chroma as a local vector database for storing and retrieving document embeddings.
 
 #### 2.2 **FastAPI Setup**
 
@@ -150,38 +149,53 @@ The backend is built using **FastAPI**, which handles the incoming requests, rou
    ├── models.py                  # Data models
    ├── services/
    │   ├── llm_service.py         # LLM integration
-   │   ├── vector_db_service.py   # Vector DB integration
+   │   ├── vector_db_service.py   # Vector DB integration (Chroma)
    │   ├── search_service.py      # Internet search integration
+   ├── data/                      # Directory for Chroma persistence
    └── requirements.txt           # Dependencies
    ```
 
 2. **Dependencies**:
    ```bash
-   pip install fastapi uvicorn openai pinecone-client
-   pip install --upgrade faiss-cpu
+   pip install fastapi uvicorn openai chromadb python-dotenv requests
    ```
 
 3. **Main Application (FastAPI)** (`main.py`):
    ```python
    from fastapi import FastAPI
+   from fastapi.middleware.cors import CORSMiddleware
    from pydantic import BaseModel
    from services.llm_service import get_llm_response
-   from services.vector_db_service import retrieve_from_vector_db
+   from services.vector_db_service import retrieve_from_vector_db, initialize_db
    from services.search_service import get_client_status_from_web
 
    app = FastAPI()
 
+   # Add CORS middleware
+   app.add_middleware(
+       CORSMiddleware,
+       allow_origins=["http://localhost:3000"],
+       allow_credentials=True,
+       allow_methods=["*"],
+       allow_headers=["*"],
+   )
+
    class ChatRequest(BaseModel):
        query: str
+
+   @app.on_event("startup")
+   async def startup_event():
+       """Initialize the vector database with example documents"""
+       initialize_db()
 
    @app.post("/chat")
    async def chat(request: ChatRequest):
        query = request.query
        
        # Decision logic based on query type
-       if "policy" in query:
+       if "policy" in query.lower():
            response = retrieve_from_vector_db(query)
-       elif "client status" in query:
+       elif "client status" in query.lower():
            response = get_client_status_from_web(query)
        else:
            response = get_llm_response(query)
@@ -192,8 +206,11 @@ The backend is built using **FastAPI**, which handles the incoming requests, rou
 4. **LLM Integration** (`llm_service.py`):
    ```python
    import openai
+   import os
+   from dotenv import load_dotenv
 
-   openai.api_key = 'your-api-key'
+   load_dotenv()
+   openai.api_key = os.getenv('OPENAI_API_KEY')
 
    def get_llm_response(query: str) -> str:
        response = openai.Completion.create(
@@ -206,26 +223,83 @@ The backend is built using **FastAPI**, which handles the incoming requests, rou
 
 5. **Vector DB Integration** (`vector_db_service.py`):
    ```python
-   import pinecone
+   import chromadb
+   from chromadb.utils import embedding_functions
+   import os
+   from dotenv import load_dotenv
 
-   pinecone.init(api_key="your-pinecone-api-key", environment="us-west1-gcp")
-   index = pinecone.Index("company-policy-documents")
+   load_dotenv()
+
+   # Initialize Chroma client with persistence
+   client = chromadb.Client(chromadb.Settings(
+       persist_directory="./data/chroma_db"
+   ))
+
+   # Create embedding function using OpenAI
+   openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+       api_key=os.getenv("OPENAI_API_KEY"),
+       model_name="text-embedding-ada-002"
+   )
+
+   # Create or get collection
+   collection = client.get_or_create_collection(
+       name="company-policy-documents",
+       embedding_function=openai_ef
+   )
+
+   def add_documents(documents: list[str], ids: list[str], metadatas: list[dict] = None):
+       """Add documents to the vector database"""
+       collection.add(
+           documents=documents,
+           ids=ids,
+           metadatas=metadatas
+       )
 
    def retrieve_from_vector_db(query: str) -> str:
-       result = index.query(query, top_k=1, include_values=True)
-       return result['matches'][0]['metadata']['text'] if result['matches'] else "No relevant information found."
+       """Query the vector database"""
+       results = collection.query(
+           query_texts=[query],
+           n_results=1
+       )
+       
+       if results and results['documents'] and results['documents'][0]:
+           return results['documents'][0][0]
+       return "No relevant information found."
+
+   def initialize_db():
+       """Initialize the database with example documents"""
+       # Only initialize if collection is empty
+       if collection.count() == 0:
+           example_docs = [
+               "Our company's work from home policy allows employees to work remotely two days per week.",
+               "The annual leave policy provides 20 days of paid vacation per year.",
+               "Our healthcare benefits include dental and vision coverage for all full-time employees."
+           ]
+           
+           example_ids = ["policy1", "policy2", "policy3"]
+           
+           example_metadata = [
+               {"type": "work_policy", "department": "HR"},
+               {"type": "leave_policy", "department": "HR"},
+               {"type": "benefits", "department": "HR"}
+           ]
+           
+           add_documents(example_docs, example_ids, example_metadata)
    ```
 
 6. **Internet Search Integration** (`search_service.py`):
    ```python
    import requests
+   import os
+   from dotenv import load_dotenv
+
+   load_dotenv()
 
    def get_client_status_from_web(query: str) -> str:
-       search_url = f"https://api.serpapi.com/search?q={query}&api_key=your-serpapi-api-key"
+       search_url = f"https://api.serpapi.com/search?q={query}&api_key={os.getenv('SERPAPI_API_KEY')}"
        response = requests.get(search_url).json()
        return response['organic_results'][0]['snippet'] if response['organic_results'] else "Client status not found."
    ```
-
 ---
 
 ### **3. Infrastructure - Running Locally**
