@@ -9,3 +9,5 @@ chromadb>=0.6.0
 python-multipart==0.0.7
 sentence-transformers>=3.4.0
 debugpy>=1.8.11
+motor==3.7.0
+pymongo==4.11

@@ -4,6 +4,12 @@
   flex-direction: column;
 }
 
+.main-container {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+
 .chat-container {
   flex: 1;
   display: flex;
@@ -12,4 +18,15 @@
   margin: 0 auto;
   width: 100%;
   padding: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+.chat-container.with-sidebar {
+  margin-left: 300px;
+}
+
+@media (max-width: 768px) {
+  .chat-container.with-sidebar {
+    margin-left: 0;
+  }
 }
