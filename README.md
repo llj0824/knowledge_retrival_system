@@ -4,6 +4,17 @@ This document outlines the engineering approach for building the knowledge retri
 
 ---
 
+### **0. Quick Start**
+
+To start both the backend and frontend servers:
+```bash
+chmod +x start.sh  # Only needed first time
+./start.sh
+```
+
+This will start the FastAPI backend server on port 8000 and the React frontend on port 3000.
+
+
 ### **1. Frontend - React Web Application**
 
 #### 1.1 **Overview**
@@ -327,9 +338,10 @@ The backend is built using **FastAPI**, which handles the incoming requests, rou
    fastapi
    uvicorn
    openai
-   pinecone-client
-   faiss-cpu
+   chromadb
+   python-dotenv
    requests
+   pydantic
    ```
 
    Install the dependencies:
