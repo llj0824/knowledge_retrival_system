@@ -11,6 +11,7 @@ const App = () => {
   const sendMessage = async (message) => {
     // Add user message
     const updatedMessages = [...messages, { sender: 'user', text: message }];
+    
     setMessages(updatedMessages);
     
     try {

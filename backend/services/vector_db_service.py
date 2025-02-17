@@ -2,6 +2,8 @@ import chromadb
 from chromadb.utils import embedding_functions
 import os
 from dotenv import load_dotenv
+from openai import OpenAI
+from sentence_transformers import SentenceTransformer
 
 load_dotenv()
 
@@ -10,16 +12,15 @@ client = chromadb.Client(chromadb.Settings(
     persist_directory="./data/chroma_db"
 ))
 
-# Create embedding function using OpenAI
-openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    model_name="text-embedding-ada-002"
+local_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2"  # Lightweight model
 )
+default_ef = local_ef
 
-# Create or get collection
+# Create or get collection 
 collection = client.get_or_create_collection(
     name="company-policy-documents",
-    embedding_function=openai_ef
+    embedding_function=default_ef
 )
 
 def add_documents(documents: list[str], ids: list[str], metadatas: list[dict] = None):

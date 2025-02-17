@@ -15,8 +15,8 @@ tell application "iTerm"
         # First tab - Backend
         tell current session of first tab
             write text "cd '${DIR}/backend'"
-            write text "source '${DIR}/venv/bin/activate'"
-            write text "uvicorn main:app --reload"
+            write text "source '${DIR}/backend/venv/bin/activate'"
+            write text "python -m debugpy --listen 0.0.0.0:5678 -m uvicorn main:app --reload"
         end tell
 
         # Second tab - Frontend

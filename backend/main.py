@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from services.llm_service import get_llm_response
+from services.llm_service import LLMService
 from services.vector_db_service import retrieve_from_vector_db, initialize_db
 from services.search_service import get_client_status_from_web
 
 app = FastAPI()
+llm_service = LLMService()
 
 # Add CORS middleware
 app.add_middleware(
@@ -26,8 +27,7 @@ async def startup_event():
 
 @app.post("/chat")
 async def chat(
-    request: ChatRequest,
-    llm_response: callable = Depends(get_llm_response)
+    request: ChatRequest
 ):
     query = request.query
     
@@ -37,6 +37,6 @@ async def chat(
     elif "client status" in query.lower():
         response = get_client_status_from_web(query)
     else:
-        response = await llm_response(query)
+        response = llm_service.get_llm_response(query=query)
     
     return {"answer": response}
