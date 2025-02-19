@@ -84,7 +84,7 @@ The system will be composed of the following components:
 - **Chat Log Management**: Logs all user interactions for auditing, training, and feedback purposes.
   
 #### 3.3 **Databases**
-- **Vector Database (e.g., Pinecone, Faiss, or Weaviate)**: Stores the embeddings of company documents, policies, and other knowledge sources for fast retrieval.
+- **Vector Database (e.g., chromadb)**: Stores the embeddings of company documents, policies, and other knowledge sources for fast retrieval.
 - **SQL Database**: Manages structured data like member information, VitaDAO Terminal logs, and user metadata.
 
 #### 3.4 **Model Integration**
