@@ -14,6 +14,7 @@ tell application "iTerm"
     tell newWindow
         # First tab - MongoDB
         tell current session of first tab
+            set name to "(MongoDB) Database"
             write text "echo 'Starting MongoDB...'"
             write text "brew services start mongodb/brew/mongodb-community@7.0"
             write text "mongosh --version"
@@ -23,6 +24,7 @@ tell application "iTerm"
         # Second tab - Backend
         create tab with default profile
         tell current session of second tab
+            set name to "(FastAPI) Backend"
             write text "cd '${DIR}/backend'"
             write text "source '${DIR}/backend/venv/bin/activate'"
             write text "python -m debugpy --listen 0.0.0.0:5678 -m uvicorn main:app --reload"
@@ -31,6 +33,7 @@ tell application "iTerm"
         # Third tab - Frontend
         create tab with default profile
         tell current session of third tab
+            set name to "(React) Frontend"
             write text "cd '${DIR}/frontend'"
             write text "npm start"
         end tell
