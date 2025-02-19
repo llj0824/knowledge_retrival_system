@@ -11,13 +11,16 @@ This document outlines the engineering approach for building the knowledge retri
 
 ### **0. Quick Start**
 
-To start both the backend and frontend servers:
+To start all services (Database, Backend Server, and Frontend):
 ```bash
 chmod +x start.sh  # Only needed first time
 ./start.sh
 ```
 
-This will start the FastAPI backend server on port 8000 and the React frontend on port 3000.
+This will start:
+- MongoDB database on port 27017
+- FastAPI backend on port 8000
+- React frontend on port 3000
 
 
 ### **1. Frontend - React Web Application**
@@ -366,6 +369,67 @@ The backend is built using **FastAPI**, which handles the incoming requests, rou
 
 - The React app will make POST requests to the FastAPI server's `/chat` endpoint. Ensure the backend server is running before interacting with the frontend.
 - Update the React API service to ensure the correct endpoint (`http://localhost:8000/chat`).
+
+#### 3.4 **MongoDB Data Management**
+Start mongodb
+brew services start mongodb/brew/mongodb-community@7.0
+
+To directly inspect or modify MongoDB data:
+
+1. **Using MongoDB Shell (mongosh)**:
+```bash
+# Connect to local MongoDB instance
+mongosh
+
+# Show databases
+show dbs
+
+# Switch to chatbot database
+use chatbot
+
+# Query conversations collection
+db.conversations.find({deleted: false})
+
+# Update a conversation
+db.conversations.updateOne(
+  {conversation_id: "14:32 17/02/2025"},
+  {$set: {deleted: true}}
+)
+
+# Delete permanently (avoid in production)
+db.conversations.deleteMany({deleted: true})
+```
+
+2. **GUI Tools**:
+- **MongoDB Compass**: Official GUI with visual query builder
+  - Download: [https://www.mongodb.com/try/download/compass](https://www.mongodb.com/try/download/compass)
+  - Connection string: `mongodb://localhost:27017`
+- **VS Code Extension**: 
+  - Install "MongoDB for VS Code" extension
+  - Connect to `mongodb://localhost:27017`
+
+3. **Data Persistence**:
+- Default storage location:
+  ```bash
+  # Homebrew install location (macOS)
+  /opt/homebrew/var/mongodb
+
+  # Linux default
+  /var/lib/mongodb
+  ```
+- To backup/restore data:
+```bash
+# Create backup
+mongodump --uri="mongodb://localhost:27017" --out=./mongo-backup
+
+# Restore from backup
+mongorestore --uri="mongodb://localhost:27017" ./mongo-backup
+```
+
+4. **Important Notes**:
+- Always stop the MongoDB service before modifying data files directly
+- Use `--auth` flag if authentication is enabled
+- For production environments, use `mongodump`/`mongorestore` instead of direct file manipulation
 
 ---
 
