@@ -36,19 +36,21 @@ const App = () => {
   }, [userId]);
 
   const sendMessage = async (message) => {
+    console.info('[UI] Sending message:', message);
     const newMessage = { sender: 'user', text: message };
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
     
     try {
       const botResponse = await getChatResponse(message);
+      console.info('[UI] Received bot response:', botResponse);
+      
       const botMessage = { sender: 'bot', text: botResponse };
       const finalMessages = [...updatedMessages, botMessage];
       setMessages(finalMessages);
       
-      // Save conversation
       if (!currentConversation) {
-        // Create new conversation
+        console.info('[UI] Creating new conversation');
         const newConversation = {
           user_id: userId,
           conversation_id: new Date().toLocaleString(),
@@ -56,15 +58,17 @@ const App = () => {
         };
         
         await createConversation(newConversation);
+        console.debug('[UI] New conversation created:', newConversation);
         setConversations([newConversation, ...conversations]);
         setCurrentConversation(newConversation);
       } else {
-        // Update existing conversation
+        console.info('[UI] Updating existing conversation:', currentConversation.conversation_id);
         const updatedConversation = {
           ...currentConversation,
           messages: finalMessages
         };
-        await createConversation(updatedConversation); // Use PUT in a real implementation
+        await createConversation(updatedConversation);
+        console.debug('[UI] Conversation updated:', updatedConversation);
         setConversations(conversations.map(c => 
           c.conversation_id === currentConversation.conversation_id 
             ? updatedConversation 
@@ -73,6 +77,7 @@ const App = () => {
         setCurrentConversation(updatedConversation);
       }
     } catch (error) {
+      console.error('[UI] Message handling failed:', error);
       setMessages([...updatedMessages, { 
         sender: 'bot', 
         text: 'Sorry, something went wrong!' 
@@ -86,16 +91,21 @@ const App = () => {
   };
 
   const handleDeleteConversation = async (conversationId) => {
+    console.info('[UI] Deleting conversation:', conversationId);
     try {
       await deleteConversation(conversationId);
+      console.debug('[UI] Deleted conversation:', conversationId);
       setConversations(conversations.filter(c => c.conversation_id !== conversationId));
       if (currentConversation?.conversation_id === conversationId) {
+        console.debug('[UI] Clearing current conversation after deletion');
         setCurrentConversation(null);
         setMessages([]);
       }
     } catch (error) {
-      console.error("Failed to delete conversation:", error);
-      // Show error message to user
+      console.error('[UI] Delete conversation failed:', {
+        error,
+        conversationId
+      });
     }
   };
 
