@@ -18,6 +18,8 @@ package-lock.json
 **/.env
 **/.env.local
 **/.env.*.local
+# MongoDB Playground files
+backend/database/playground-3.mongodb.js
 
 # IDE files
 .vscode/

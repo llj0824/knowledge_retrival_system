@@ -9,6 +9,7 @@ from services.search_service import get_client_status_from_web
 from models.conversation import Conversation, Message
 from datetime import datetime
 from typing import List
+from database.mongodb import MongoDB  # Add this import
 
 
 
@@ -39,27 +40,25 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     query: str
 
-# In-memory storage for demonstration (replace with database in production)
-conversations_db: dict[str, Conversation] = {}
-
 @app.on_event("startup")
 async def startup_event():
-    """Initialize the vector database with example documents"""
-    logger.info("Initializing vector database")
-    initialize_db()
-    logger.info("Vector database initialization complete")
+    """Initialize databases"""
+    logger.info("Initializing databases")
+    await MongoDB.connect_db()
+    initialize_db()  # Existing vector DB initialization
+    logger.info("Database initialization complete")
 
 @app.post("/conversations")
 async def create_conversation(conversation: Conversation):
     logger.info(f"Creating conversation {conversation.conversation_id} for user {conversation.user_id}")
     try:
-        # Add timestamps to messages if not present
         for msg in conversation.messages:
             if not msg.timestamp:
                 msg.timestamp = datetime.now().isoformat()
         
-        conversations_db[conversation.conversation_id] = conversation
-        logger.debug(f"Conversation stored: {conversation.conversation_id}")
+        # Updated to use MongoDB class
+        result = await MongoDB.create_conversation(conversation.dict())
+        logger.debug(f"Conversation stored with id: {result['_id']}")
         return conversation
     except Exception as e:
         logger.error(f"Conversation creation failed: {str(e)}", exc_info=True)
@@ -69,12 +68,9 @@ async def create_conversation(conversation: Conversation):
 async def get_conversations(user_id: str) -> List[Conversation]:
     logger.info(f"Fetching conversations for user {user_id}")
     try:
-        user_conversations = [
-            conv for conv in conversations_db.values() 
-            if conv.user_id == user_id and not conv.deleted
-        ]
-        logger.debug(f"Found {len(user_conversations)} conversations for user {user_id}")
-        return user_conversations
+        # Updated to use MongoDB class
+        conversations = await MongoDB.get_conversations(user_id)
+        return [Conversation(**doc) for doc in conversations]
     except Exception as e:
         logger.error(f"Conversation fetch failed: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -83,12 +79,12 @@ async def get_conversations(user_id: str) -> List[Conversation]:
 async def delete_conversation(conversation_id: str):
     logger.info(f"Deleting conversation {conversation_id}")
     try:
-        if conversation_id not in conversations_db:
+        # Updated to use MongoDB class
+        success = await MongoDB.soft_delete_conversation(conversation_id)
+        if not success:
             logger.warning(f"Conversation {conversation_id} not found")
             raise HTTPException(status_code=404, detail="Conversation not found")
             
-        # Soft delete the conversation
-        conversations_db[conversation_id].deleted = True
         logger.debug(f"Successfully deleted conversation {conversation_id}")
         return {"status": "success"}
     except HTTPException:
