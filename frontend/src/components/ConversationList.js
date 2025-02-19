@@ -29,7 +29,7 @@ const ConversationList = ({
               >
                 <span className="timestamp">{convo.conversation_id}</span>
                 <span className="preview">
-                  {convo.messages[0]?.text.substring(0, 30)}...
+                  {convo.messages[0]?.content.substring(0, 30)}...
                 </span>
               </div>
               <button 
