@@ -371,8 +371,10 @@ The backend is built using **FastAPI**, which handles the incoming requests, rou
 - Update the React API service to ensure the correct endpoint (`http://localhost:8000/chat`).
 
 #### 3.4 **MongoDB Data Management**
-Start mongodb
-brew services start mongodb/brew/mongodb-community@7.0
+Start/Stopping mongodb
+1. brew services start mongodb/brew/mongodb-community@7.0
+2. brew services stop mongodb/brew/mongodb-community@7.0
+
 
 To directly inspect or modify MongoDB data:
 
