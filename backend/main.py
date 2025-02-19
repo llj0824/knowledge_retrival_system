@@ -50,15 +50,16 @@ async def startup_event():
 
 @app.post("/conversations")
 async def create_conversation(conversation: Conversation):
-    logger.info(f"Creating conversation {conversation.conversation_id} for user {conversation.user_id}")
+    logger.info(f"Creating/updating conversation {conversation.conversation_id} for user {conversation.user_id}")
     try:
+        # Add timestamps to new messages
         for msg in conversation.messages:
             if not msg.timestamp:
                 msg.timestamp = datetime.now().isoformat()
         
-        # Updated to use MongoDB class
-        result = await MongoDB.create_conversation(conversation.dict())
-        logger.debug(f"Conversation stored with id: {result['_id']}")
+        # Upsert instead of insert
+        result = await MongoDB.upsert_conversation(conversation.dict())
+        logger.info(f"Conversation stored with id: {conversation.conversation_id}")
         return conversation
     except Exception as e:
         logger.error(f"Conversation creation failed: {str(e)}", exc_info=True)

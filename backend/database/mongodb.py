@@ -26,6 +26,17 @@ class MongoDB:
         result = await cls.db.conversations.insert_one(conversation)
         return {**conversation, "_id": str(result.inserted_id)}
 
+    
+    @classmethod
+    async def upsert_conversation(cls, conversation: Dict[str, Any]) -> bool:
+        """Update or insert conversation based on conversation_id"""
+        result = await cls.db.conversations.update_one(
+            {"conversation_id": conversation["conversation_id"]},
+            {"$set": conversation},
+            upsert=True
+        )
+        return result.upserted_id is not None
+
     @classmethod
     async def get_conversations(cls, user_id: str) -> List[Dict[str, Any]]:
         cursor = cls.db.conversations.find({

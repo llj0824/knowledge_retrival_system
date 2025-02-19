@@ -17,7 +17,7 @@ const ChatWindow = ({ messages }) => {
       {messages.map((message, index) => (
         <div key={index} className={`message ${message.sender}`}>
           <div className="message-content">
-            <p>{message.text}</p>
+            <p>{message.content}</p>
           </div>
         </div>
       ))}

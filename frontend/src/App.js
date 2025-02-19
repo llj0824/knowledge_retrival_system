@@ -37,7 +37,11 @@ const App = () => {
 
   const sendMessage = async (message) => {
     console.info('[UI] Sending message:', message);
-    const newMessage = { sender: 'user', text: message };
+    const newMessage = { 
+      sender: 'user', 
+      content: message,
+      timestamp: new Date().toISOString()
+    };
     const updatedMessages = [...messages, newMessage];
     setMessages(updatedMessages);
     
@@ -45,29 +49,35 @@ const App = () => {
       const botResponse = await getChatResponse(message);
       console.info('[UI] Received bot response:', botResponse);
       
-      const botMessage = { sender: 'bot', text: botResponse };
+      const botMessage = { 
+        sender: 'bot', 
+        content: botResponse,
+        timestamp: new Date().toISOString()
+      };
       const finalMessages = [...updatedMessages, botMessage];
       setMessages(finalMessages);
       
+      const conversationData = {
+        user_id: userId,
+        messages: finalMessages.map(m => ({
+          content: m.content,
+          sender: m.sender,
+          timestamp: m.timestamp
+        }))
+      };
+
       if (!currentConversation) {
         console.info('[UI] Creating new conversation');
-        const newConversation = {
-          user_id: userId,
-          conversation_id: new Date().toLocaleString(),
-          messages: finalMessages
-        };
-        
-        await createConversation(newConversation);
+        const newConversation = await createConversation(conversationData);
         console.debug('[UI] New conversation created:', newConversation);
         setConversations([newConversation, ...conversations]);
         setCurrentConversation(newConversation);
       } else {
         console.info('[UI] Updating existing conversation:', currentConversation.conversation_id);
-        const updatedConversation = {
-          ...currentConversation,
-          messages: finalMessages
-        };
-        await createConversation(updatedConversation);
+        const updatedConversation = await createConversation({
+          ...conversationData,
+          conversation_id: currentConversation.conversation_id
+        });
         console.debug('[UI] Conversation updated:', updatedConversation);
         setConversations(conversations.map(c => 
           c.conversation_id === currentConversation.conversation_id 
@@ -80,7 +90,8 @@ const App = () => {
       console.error('[UI] Message handling failed:', error);
       setMessages([...updatedMessages, { 
         sender: 'bot', 
-        text: 'Sorry, something went wrong!' 
+        content: 'Sorry, something went wrong!',
+        timestamp: new Date().toISOString()
       }]);
     }
   };
