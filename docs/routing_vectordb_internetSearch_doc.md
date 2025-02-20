@@ -133,116 +133,93 @@ Query: "Meaning of life" → LLM outputs {"action": "llm"}, uses base knowledge.
 
 ### **3.1 Data Ingestion Flow**
 
-The core of our knowledge retrieval system involves storing document embeddings in a **vector database** for efficient querying. **ChromaDB** is selected as the database for its performance and support for high-dimensional vector search. Below is the comprehensive process for data ingestion, starting from scraping blog posts to embedding and storing them in ChromaDB.
+#### **Script for ingesting into vector db**
+The ingestion process is handled by the script [`ingestWebsiteToChromaDb.py`](../../backend/scripts/ingestWebsiteToChromaDb.py), which scrapes content from a given website, generates embeddings, and stores them in ChromaDB.
 
-#### **Step 1: Scraping Blog Posts from VitaDAO Website**
-
-To ingest blog posts from the VitaDAO website, we will use **BeautifulSoup** and **Requests** to scrape the content. Each post will be split into smaller chunks (such as paragraphs) to facilitate efficient embedding and searching.
-
-```python
-from bs4 import BeautifulSoup
-import requests
-
-def scrape_blog_posts(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    posts = []
-    for post in soup.find_all('article'):
-        title = post.find('h2').text
-        content = post.find('p').text
-        posts.append(f"{title}\n{content}")
-    return posts
-
-url = "https://www.vitadao.com/blog"
-posts = scrape_blog_posts(url)
-```
-
-Another example
-```python 
-import requests
-from bs4 import BeautifulSoup
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-def get_post_urls(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
-    post_urls = []
-    for post in soup.find_all("article"):
-        link = post.find("a")
-        if link:
-            post_urls.append(link.get("href"))
-    return post_urls
-
-def scrape_post_content(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
-    title = soup.find("h1").text
-    content = soup.find("div", class_="entry-content").text
-    return f"{title}\n{content}"
-
-def scrape_all_posts(main_url):
-    post_urls = get_post_urls(main_url)
-    posts = []
-    for url in post_urls:
-        posts.append(scrape_post_content(url))
-    return posts
-
-url = "https://www.vitadao.com/blog"
-posts = scrape_all_posts(url)
-splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-chunks = splitter.split_text("\n".join(posts))
-```
-
-#### **Step 2: Generating Embeddings Using SentenceTransformers**
-
-After partitioning the text into appropriate chunks (e.g., paragraphs), we generate **embeddings** for each text chunk using **SentenceTransformers**. This is essential for semantic search, enabling retrieval of the most relevant documents based on meaning rather than keyword matching.
+Below is a snippet from the script:
 
 ```python
-from langchain.embeddings import SentenceTransformersEmbeddings
-from langchain.vectorstores import Chroma
-
-def generate_embeddings(posts):
-    embeddings = SentenceTransformersEmbeddings(model_name="all-MiniLM-L6-v2")
-    vectorstore = Chroma.from_texts(posts, embeddings, collection_name="vitadao_blogs")
-    return vectorstore
-
-vectorstore = generate_embeddings(posts)
+def main():
+    target_url = input("Enter website URL to process (e.g., https://vitadao.com/blog/): ").strip()
+    if not target_url.startswith(('http://', 'https://')):
+        target_url = f"https://{target_url}"
+    
+    print(f"\n🔍 Scraping content from: {target_url}")
+    documents = scrape_single_page(target_url)
+    
+    if not documents:
+        print("No content found. Exiting.")
+        return
+    
+    print("🧠 Generating embeddings...")
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    embeddings = model.encode(documents)
+    
+    print("💾 Saving to ChromaDB...")
+    client = HttpClient(settings=Settings(
+        chroma_db_impl="duckdb+parquet",
+        persist_directory="./chroma_db"
+    ))
+    collection = client.get_or_create_collection("vitadao_content")
+    
+    collection.add(
+        ids=[str(i) for i in range(len(documents))],
+        documents=documents,
+        embeddings=embeddings.tolist()
+    )
+    
+    print(f"✅ Successfully stored {len(documents)} chunks from {target_url}")
 ```
 
-#### **Step 3: Storing Data in ChromaDB**
+For the full implementation, refer to [`ingestWebsiteToChromaDb.py`](../../backend/scripts/ingestWebsiteToChromaDb.py).
 
-Once the embeddings are generated, they are inserted into **ChromaDB** for fast retrieval. ChromaDB allows efficient storage and retrieval of embeddings, making it suitable for large-scale applications.
-
----
-
-### **3.2 Querying the Vector Database**
-
-After storing the embeddings, querying the database becomes the next crucial step. To perform a query, we utilize **ChromaDB's similarity search** capabilities, which allow us to find the closest matches to a user’s query.
-
+#### **Step 2: Embedding Generation**
 ```python
-def query_vector_db(query, vectorstore):
-    result = vectorstore.similarity_search(query, k=5)  # Retrieve top 5 similar results
-    return result
+def generate_embeddings(docs):
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    return model.encode(docs)
+```
 
-query = "What are the latest changes in tokenomics?"
-results = query_vector_db(query, vectorstore)
+#### **Step 3: ChromaDB Storage**
+```python
+def store_in_chroma(docs, embeddings, db_path="./chroma_db"):
+    client = HttpClient(settings=Settings(
+        chroma_db_impl="duckdb+parquet",
+        persist_directory=db_path
+    ))
+    collection = client.get_or_create_collection("vitadao_blogs")
+    
+    collection.add(
+        ids=[str(i) for i in range(len(docs))],
+        documents=docs,
+        embeddings=embeddings.tolist()
+    )
+    client.persist()
+```
+
+### **3.2 Querying the Database**
+```python
+def semantic_search(query, db_path="./chroma_db", top_k=5):
+    # Initialize components
+    client = HttpClient(persist_directory=db_path)
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    collection = client.get_collection("vitadao_blogs")
+    
+    # Generate query embedding
+    query_embedding = model.encode([query]).tolist()[0]
+    
+    # Perform search
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=top_k
+    )
+    
+    return results["documents"][0]
+
+# Usage
+results = semantic_search("What are the latest changes in tokenomics?")
 print(results)
 ```
-
-This query retrieves the top 5 results from ChromaDB that are most semantically similar to the user's question.
-
-
-```python
-from chromadb import Client
-client = Client()
-collection = client.get_collection("vitadao_blogs")
-all_docs = collection.get()
-print(all_docs['documents'])
-```
-
-This query shows all the documents.
-
----
 
 ## **4. Routing User Queries & Query Logic**
 
@@ -250,7 +227,7 @@ This query shows all the documents.
 
 The **Reasoning LLM** is a key part of the query routing logic. It determines whether to query the **Vector Database**, perform a **web search**, or return a **native LLM response** based on the type of query. 
 
-Here’s an example of how the **Reasoning LLM** can be implemented to evaluate the user's query and decide the best route for answering:
+Here's an example of how the **Reasoning LLM** can be implemented to evaluate the user's query and decide the best route for answering:
 
 #### **Example of Query Routing Logic**
 
@@ -298,7 +275,7 @@ Validate LLM decisions, tool responses, and handle edge cases (typos, no results
 
 ### **5.1 Summary of Implementation**
 
-The **VitaDAO AI Terminal** integrates **Vector Database** (ChromaDB), **Internet Search** (via SerpAPI), and **Reasoning LLMs** for intelligent query routing. The system’s modular design allows flexibility in responding to user queries by:
+The **VitaDAO AI Terminal** integrates **Vector Database** (ChromaDB), **Internet Search** (via SerpAPI), and **Reasoning LLMs** for intelligent query routing. The system's modular design allows flexibility in responding to user queries by:
 1. Searching deeply within the **VitaDAO website** and other trusted sources.
 2. Using **semantic embeddings** to retrieve the most relevant documents from ChromaDB.
 3. Relying on a **reasoning LLM** to make real-time decisions on how best to answer a query.
@@ -307,13 +284,11 @@ The **VitaDAO AI Terminal** integrates **Vector Database** (ChromaDB), **Interne
 
 - **Caching**: Implement caching mechanisms to improve the efficiency of frequent queries.
 - **Error Handling**: Add robust error handling to address common issues (e.g., network timeouts, API failures).
-- **Advanced Search Techniques
-
-**: Integrate more advanced semantic search techniques to improve the relevance of search results.
+- **Advanced Search Techniques**: Integrate more advanced semantic search techniques to improve the relevance of search results.
 
 ### **5.3 Next Steps**
 - **Deployment**: Implement this system in a production environment for the VitaDAO team to access real-time knowledge from the blog and documentation.
-- **Monitoring and Maintenance**: Continuously monitor the system’s performance and make adjustments as necessary, such as retraining models or fine-tuning search strategies.
+- **Monitoring and Maintenance**: Continuously monitor the system's performance and make adjustments as necessary, such as retraining models or fine-tuning search strategies.
 
 ---
 
