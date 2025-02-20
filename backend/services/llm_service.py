@@ -36,12 +36,13 @@ class LLMService:
           
     def get_llm_response(self,
         query: str,
-        history: list = []
+        history: list = [],
+        system_prompt: str = "You are a helpful assistant"
     ) -> str:
         """Get response using injected service instance"""
         try:
             messages = [
-                {"role": "system", "content": "You are a helpful assistant"},
+                {"role": "system", "content": system_prompt},
                 *[{"role": "user", "content": msg} for msg in history],
                 {"role": "user", "content": query}
             ]

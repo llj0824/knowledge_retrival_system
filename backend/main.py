@@ -10,6 +10,7 @@ from models.conversation import Conversation, Message
 from datetime import datetime
 from typing import List
 from database.mongodb import MongoDB  # Add this import
+from services.routing_service import QueryRouter  # Add this import
 
 
 
@@ -27,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 llm_service = LLMService()
+router = QueryRouter()  # Add this line
 
 # Add CORS middleware
 app.add_middleware(
@@ -95,25 +97,29 @@ async def delete_conversation(conversation_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/chat")
-async def chat(
-    request: ChatRequest
-):
+async def chat(request: ChatRequest):
     logger.info(f"Received chat request: {request.query}")
     
-    query = request.query
-    
     try:
-        if "policy" in query.lower():
-            logger.debug("Routing to vector DB lookup")
-            response = retrieve_from_vector_db(query)
-        elif "client status" in query.lower():
-            logger.debug("Routing to web search")
-            response = get_client_status_from_web(query)
-        else:
-            logger.debug("Routing to LLM")
-            response = llm_service.get_llm_response(query=query)
+        # Route the query first
+        routing_decision = await router.route_query(request.query)
+        logger.info(f"Routing decision: {routing_decision}")
+
+        # Handle different response types
+        if routing_decision["action"] == "vector":
+            response = retrieve_from_vector_db(request.query)
+        elif routing_decision["action"] in ["search_focused", "search_general"]:
+            response = get_client_status_from_web(
+                request.query, 
+                site_filter="vitadao.com" if routing_decision["action"] == "search_focused" else None
+            )
+        else:  # Fallback to LLM
+            response = llm_service.get_llm_response(
+                query=request.query,
+                system_prompt=routing_decision.get("params", {}).get("system_prompt")
+            )
             
-        logger.info(f"Chat response generated: {response[:100]}...")  # Truncate long responses
+        logger.info(f"Chat response generated: {response[:100]}...")
         return {"answer": response}
         
     except Exception as e:

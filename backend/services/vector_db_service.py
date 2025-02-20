@@ -19,7 +19,7 @@ default_ef = local_ef
 
 # Create or get collection 
 collection = client.get_or_create_collection(
-    name="company-policy-documents",
+    name="vitadao", 
     embedding_function=default_ef
 )
 
@@ -31,16 +31,26 @@ def add_documents(documents: list[str], ids: list[str], metadatas: list[dict] = 
         metadatas=metadatas
     )
 
-def retrieve_from_vector_db(query: str) -> str:
-    """Query the vector database"""
-    results = collection.query(
-        query_texts=[query],
-        n_results=1
-    )
-    
-    if results and results['documents'] and results['documents'][0]:
-        return results['documents'][0][0]
-    return "No relevant information found."
+def retrieve_from_vector_db(query: str) -> list[dict]:
+    """Query the vector database with proper error handling"""
+    try:
+        results = collection.query(
+            query_texts=[query],
+            n_results=5,  # Match documentation's top 5 results
+            include=["documents", "metadatas", "distances"]
+        )
+        
+        return [{
+            "content": doc,
+            "metadata": meta,
+            "score": float(score)
+        } for doc, meta, score in zip(
+            results["documents"][0],
+            results["metadatas"][0],
+            results["distances"][0]
+        )]
+    except Exception as e:
+        raise VectorDBError(f"Query failed: {str(e)}")
 
 def initialize_db():
     """Initialize the database with example documents"""
@@ -61,3 +71,7 @@ def initialize_db():
         ]
         
         add_documents(example_docs, example_ids, example_metadata)
+
+class VectorDBError(Exception):
+    """Custom error class for vector database operations"""
+    pass
